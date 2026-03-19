@@ -13,7 +13,7 @@ using Eigen::Vector3d;
 ImuSerialLoader::ImuSerialLoader(const std::string& port, int baudrate, int rate) {
     if (!serial_.open(port, baudrate)) {
         is_open_ = false;
-        LOG_ERROR("Failed to open serial port: %s, baudrate: %d", port.c_str(), baudrate);
+        LOG_Error("Failed to open serial port: %s, baudrate: %d", port.c_str(), baudrate);
     } else {
         is_open_ = true;
         dt_ = 1.0 / (double)rate;
@@ -21,13 +21,16 @@ ImuSerialLoader::ImuSerialLoader(const std::string& port, int baudrate, int rate
         imu_pre_.time = 0;
         
         // 初始化状态
-        parse_state_ = 0;
-        current_data_type_ = 0;
-        frame_buffer_.reserve(11); // 帧大小固定为11字节
-        
-        // 初始化数据缓存
-        imu_cache_.last_acceleration.setZero();
-        imu_cache_.last_angular_velocity.setZero();
+    parse_state_ = 0;
+    current_data_type_ = 0;
+    frame_buffer_.reserve(11); // 帧大小固定为11字节
+    
+    // 初始化数据缓存
+    imu_cache_.last_acceleration.setZero();
+    imu_cache_.last_angular_velocity.setZero();
+    
+    // 增加缓冲区大小，提高数据处理能力
+    buffer_.reserve(4096);
         
         LOG_INFO("IMU serial loader initialized successfully: port=%s, baudrate=%d, rate=%d Hz", 
                 port.c_str(), baudrate, rate);
@@ -39,6 +42,8 @@ const IMU& ImuSerialLoader::next() {
     imu_.dt = 0;
     imu_.dtheta = Vector3d::Zero();
     imu_.dvel = Vector3d::Zero();
+    imu_.acceleration = Vector3d::Zero();
+    imu_.angular_velocity = Vector3d::Zero();
     imu_.odovel = 0;
 
     // 检查超时
@@ -62,7 +67,7 @@ const IMU& ImuSerialLoader::next() {
             // 检查连续错误数
             error_count_++;
             if (error_count_ > max_error_count_) {
-                LOG_ERROR("Too many consecutive errors (%d), resetting state", error_count_);
+                LOG_Error("Too many consecutive errors (%d), resetting state", error_count_);
                 resetState();
             }
         }
@@ -73,6 +78,14 @@ const IMU& ImuSerialLoader::next() {
 
 bool ImuSerialLoader::isOpen() const {
     return is_open_;
+}
+
+qint64 ImuSerialLoader::bytesAvailable() const {
+    if (!is_open_) {
+        return 0;
+    }
+    // 返回串口可用的字节数
+    return serial_.bytesAvailable();
 }
 
 void ImuSerialLoader::append(const char* data, int size) {
@@ -221,14 +234,20 @@ bool ImuSerialLoader::parseIMUData() {
                     // 使用当前系统时间作为IMU时间的近似值
                     // 实际应用中，应该从IMU数据中提取真实的IMU时间
                     imu_.time = ASSIGN_IMU_TIME(local_time);
+                    // 记录系统时间戳
+                    imu_.timestamp = local_time;
                     imu_cache_.timestamp = imu_.time;
                     
                     // 转换为标准时间格式
-                    LOG_INFO("IMU: Local time: %.3f", local_time);
+                    LOG_DEBUG("IMU: Local time: %.3f", local_time);
                     
                     // 计算角速度增量和速度增量
                     imu_.dtheta = filtered_gyro * dt_;
                     imu_.dvel = filtered_acc * dt_;
+                    
+                    // 复制加速度和角速度数据
+                    imu_.acceleration = filtered_acc;
+                    imu_.angular_velocity = filtered_gyro;
                     
                     // 计算时间间隔
                     double dt = imu_.time - imu_pre_.time;
@@ -248,13 +267,18 @@ bool ImuSerialLoader::parseIMUData() {
                         imu_.temperature = imu_cache_.temperature;
                     }
                     
+                    // 复制角度数据
+                    if (imu_cache_.has_angle) {
+                        imu_.angle = imu_cache_.angle;
+                    }
+                    
                     // 复制航向数据
                     imu_.magnetic_heading = imu_cache_.magnetic_heading;
                     // 计算真航向（假设磁偏角为0）
                     imu_.true_heading = imu_cache_.magnetic_heading;
                     
                     parsed = true;
-                    LOG_DEBUG("Generated IMU data at time: %.3f, dt: %.6f", imu_.time, imu_.dt);
+                    
                     LOG_DEBUG("IMU data includes: magnetic_field=%.1f,%.1f,%.1f uT, temperature=%.2f °C, magnetic_heading=%.1f degrees", 
                             imu_.magnetic_field[0], imu_.magnetic_field[1], imu_.magnetic_field[2],
                             imu_.temperature, imu_.magnetic_heading);
@@ -267,7 +291,7 @@ bool ImuSerialLoader::parseIMUData() {
                     
                     // 统计信息
                     // if (imu_cache_.valid_data_count % 100 == 0) {
-                    //     LOG_INFO("IMU Parser Stats: Total frames: %d, Valid: %d, Errors: %d, Drop: %d", 
+                    //     LOG_DEBUG("IMU Parser Stats: Total frames: %d, Valid: %d, Errors: %d, Drop: %d", 
                     //             frame_count_, valid_frame_count_, error_count_, drop_frame_count_);
                     // }
                     imu_cache_.valid_data_count++;
@@ -294,7 +318,7 @@ bool ImuSerialLoader::parseIMUData() {
             
             // 检查连续错误数
             if (error_count_ > max_error_count_) {
-                LOG_ERROR("Too many consecutive errors (%d), resetting parser", error_count_);
+                LOG_Error("Too many consecutive errors (%d), resetting parser", error_count_);
                 resetState();
                 parsed = false;
                 break;
@@ -397,6 +421,9 @@ void ImuSerialLoader::resetState() {
 }
 
 void ImuSerialLoader::clearBuffer() {
+    // 清空内部缓冲区
     buffer_.clear();
+    // 清空串口缓冲区
+    serial_.clearBuffer();
     LOG_DEBUG("Buffer cleared, buffer size: %zu bytes", buffer_.size());
 }

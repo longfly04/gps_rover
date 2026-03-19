@@ -1,5 +1,6 @@
 #include "ui/mainwindow.h"
 #include <QApplication>
+#include <QIcon>
 #include "core/common/logger.h"
 
 /**
@@ -11,7 +12,7 @@
 int main(int argc, char *argv[])
 {
     // 初始化日志系统
-    Logger::getInstance().setLevel(Logger::INFO);
+    Logger::getInstance().setLevel(Logger::LogLevel::INFO);
     Logger::getInstance().setLogFile("gps_rover.log");
     
     LOG_INFO("GPS-Rover application started");
@@ -21,9 +22,13 @@ int main(int argc, char *argv[])
     }
     
     QApplication a(argc, argv);
+    // 设置应用程序图标
+    a.setWindowIcon(QIcon("d:/GPS-Seeder/gps_rover/resource/icon.jpg"));
     LOG_INFO("QApplication initialized");
     
     MainWindow w;
+    // 设置主窗口图标
+    w.setWindowIcon(QIcon("d:/GPS-Seeder/gps_rover/resource/icon.jpg"));
     LOG_INFO("MainWindow created");
     
     w.show();

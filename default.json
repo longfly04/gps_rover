@@ -1,0 +1,6 @@
+{
+    "gnss_baudrate": 9600,
+    "gnss_serial_port": "COM7",
+    "imu_baudrate": 115200,
+    "imu_serial_port": "COM7"
+}

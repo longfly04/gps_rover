@@ -1,619 +1,1020 @@
 #include "sensorinterface.h"
 #include <QDateTime>
 #include <QThread>
-#include <sstream>
-#include <iomanip>
+#include <QElapsedTimer>
+#include <qobject.h>
+#include <QTimer>
+
+// 包含加载器头文件
+#include "core/fileio/imuserialloader.h"
+#include "core/fileio/gnssserialloader.h"
 
 // 包含日志头文件
 #include "core/common/logger.h"
 
-/**
- * @brief 构造函数，初始化默认参数
- * @param parent 父对象指针
- */
-SensorInterface::SensorInterface(QObject *parent) : QObject(parent)
+// SensorBase基类实现
+SensorBase::SensorBase(QObject *parent) : 
+    QObject(parent),
+    port_(""),
+    baudrate_(115200),
+    connected_(false),
+    running_(false),
+    thread_(nullptr),
+    watchdogTimer_(nullptr),
+    timeSyncDt_(0.0),
+    timeSynced_(false)
 {
-
-
-    imuRunning_ = false;
-    gnssRunning_ = false;
-    imuConnected_ = false;
-    gnssConnected_ = false;
-    
-    // 初始化串口参数
-    imuPort_ = "";
-    imuBaudrate_ = 115200;
-    gnssPort_ = "";
-    gnssBaudrate_ = 115200;
-    
     // 初始化线程
-    imuThread_ = new QThread(this);
-    gnssThread_ = new QThread(this);
-    
-    // 初始化KF-GINS加载器
-    imuLoader_ = nullptr;
-    gnssLoader_ = nullptr;
-    
-    // 初始化原始数据缓存
-    rawImuData_ = "";
-    rawGnssData_ = "";
-    
-    // 记录初始化日志（日志系统已在MainWindow中初始化）
-    LOG_INFO("%s", "SensorInterface initialized");
+    thread_ = new QThread(this);
+    // 注意：watchdogTimer_ 在子类中初始化和连接
 }
 
-/**
- * @brief 析构函数
- */
-SensorInterface::~SensorInterface()
+SensorBase::~SensorBase()
 {
+    // 注意：watchdogTimer_ 在子类中停止和清理
 
-    // 断开所有传感器连接
-    disconnectIMU();
-    disconnectGPS();
-    
-    // 清理线程
-    if (imuThread_) {
-        delete imuThread_;
+    // 等待线程结束
+    if (thread_ && thread_->isRunning()) {
+        thread_->wait(1000); // 等待最多 1 秒
     }
-    if (gnssThread_) {
-        delete gnssThread_;
-    }
+    // 线程会被自动销毁，因为它的父对象是 this
 }
 
 /**
- * @brief 启动IMU数据采集
+ * @brief 启动传感器线程
  * @return 是否启动成功
  */
-bool SensorInterface::startIMU()
+bool SensorBase::startThread()
 {
-    LOG_INFO("Starting IMU data collection...");
-    
-    if (!imuConnected_) {
-        LOG_WARN("IMU is not connected, cannot start data collection");
+    if (!thread_ || thread_->isRunning()) {
         return false;
     }
     
-    // 设置运行标志
-    imuRunning_ = true;
+    // 移动对象到线程：将传感器对象移动到线程中，确保在线程中运行
+    // 这个步骤非常关键，卡了我一周TNND！！！！！！！！！！！！
+    this->moveToThread(thread_);
     
-    if (!imuThread_->isRunning()) {
-        // 确保之前的连接已经断开
-        disconnect(imuThread_, &QThread::started, this, &SensorInterface::imuDataCollectionThread);
-        // 连接IMU数据采集槽函数
-        connect(imuThread_, &QThread::started, this, &SensorInterface::imuDataCollectionThread, Qt::DirectConnection);
-        imuThread_->start();
-        LOG_INFO("IMU data collection thread started");
-        return true;
-    } else {
-        LOG_INFO("IMU data collection thread is already running");
-        return true;
-    }
+    // 启动线程
+    thread_->start();
+    return true;
 }
 
 /**
- * @brief 停止IMU数据采集
+ * @brief 停止传感器线程
  */
-void SensorInterface::stopIMU()
+void SensorBase::stopThread()
 {
-    LOG_INFO("Stopping IMU data collection...");
-    
-    // 首先设置运行标志为false，使线程能够退出循环
-    imuRunning_ = false;
-    
-    // 等待线程停止
-    if (imuThread_->isRunning()) {
-        // 等待线程退出，设置超时时间为2秒
-        if (!imuThread_->wait(500)) {
-            LOG_WARN("IMU thread did not stop within timeout, forcing termination");
-            // 强制终止线程
-            imuThread_->terminate();
-            imuThread_->wait();
+    if (thread_ && thread_->isRunning()) {
+        thread_->quit();
+        // 等待线程结束，确保线程完全停止
+        if (!thread_->wait(1000)) {
+            LOG_WARN("Sensor thread did not stop within 1 second, forcing termination");
+            thread_->terminate();
+            thread_->wait();
         }
-        LOG_INFO("IMU data collection thread stopped");
-    }
-    
-    // 重置IMU加载器
-    if (imuLoader_) {
-        imuLoader_.reset();
-        imuConnected_ = false;
-        LOG_INFO("IMU loader reset");
+        LOG_INFO("Sensor thread stopped successfully");
     }
 }
 
 /**
- * @brief 启动GPS数据采集
- * @return 是否启动成功
+ * @brief 传感器时钟方法，用于记录传感器上的时间
+ * @return 传感器上的时间戳
  */
-bool SensorInterface::startGPS()
+double SensorBase::clock()
 {
-    LOG_INFO("Starting GPS data collection...");
+    // 默认返回系统时间戳
+    return static_cast<double>(time(nullptr));
+}
+
+void SensorBase::setSerialParams(const QString &port, int baudrate)
+{
+    port_ = port;
+    baudrate_ = baudrate;
+}
+
+bool SensorBase::isConnected() const
+{
+    return connected_;
+}
+
+bool SensorBase::isRunning() const
+{
+    return running_;
+}
+
+QString SensorBase::getPort() const
+{
+    return port_;
+}
+
+int SensorBase::getBaudrate() const
+{
+    return baudrate_;
+}
+
+QList<QSerialPortInfo> SensorBase::getAvailableSerialPorts()
+{
+    LOG_INFO("Getting available serial ports");
+    QList<QSerialPortInfo> availablePorts = QSerialPortInfo::availablePorts();
+    LOG_INFO("Found %d available serial ports", availablePorts.size());
+    for (const QSerialPortInfo& port : availablePorts) {
+        LOG_DEBUG("Available port: %s, description: %s, manufacturer: %s", 
+                 port.portName().toStdString().c_str(),
+                 port.description().toStdString().c_str(),
+                 port.manufacturer().toStdString().c_str());
+    }
+    return availablePorts;
+}
+
+/**
+ * @brief 时间同步方法，为所有传感器同步时间
+ * @param systemTimestamp 系统时间戳
+ * @param utcTime UTC时间
+ * @return 是否同步成功
+ */
+bool SensorBase::syncTime(double systemTimestamp, double localTime)
+{
+    // 计算系统时间与本地时间的差值
+    double timeDifference = localTime - systemTimestamp;
     
-    if (!gnssConnected_) {
-        LOG_WARN("GPS is not connected, cannot start data collection");
+    LOG_DEBUG("Sensor: Time difference calculated: %.3f seconds", timeDifference);
+    
+    // 设置时间同步的dt值
+    setTimeSyncDt(timeDifference);
+    setTimeSynced(true);
+    
+    LOG_INFO("Sensor: Time sync completed, dt=%.3f seconds", timeSyncDt_);
+    
+    return true;
+}
+
+/**
+ * @brief 设置时间同步的dt值
+ * @param dt 时间同步的dt值
+ */
+void SensorBase::setTimeSyncDt(double dt)
+{
+    timeSyncDt_ = dt;
+    LOG_DEBUG("Sensor: Time sync dt updated to %.3f seconds", dt);
+}
+
+/**
+ * @brief 设置时间同步状态
+ * @param synced 时间是否已同步
+ */
+void SensorBase::setTimeSynced(bool synced)
+{
+    timeSynced_ = synced;
+    LOG_DEBUG("Sensor: Time synced status updated to %d", synced);
+}
+
+/**
+ * @brief 获取时间同步的dt值
+ * @return 时间同步的dt值
+ */
+double SensorBase::getTimeSyncDt() const
+{
+    return timeSyncDt_;
+}
+
+/**
+ * @brief 检查时间是否已同步
+ * @return 时间是否已同步
+ */
+bool SensorBase::isTimeSynced() const
+{
+    return timeSynced_;
+}
+
+// ImuSensor 实现
+ImuSensor::ImuSensor(QObject *parent) :
+    SensorBase(parent),
+    imuLoader_(nullptr),
+    dataSendTimer_(nullptr),
+    watchdogTimer_(nullptr)
+{
+    // 初始化数据发送定时器
+    dataSendTimer_ = new QTimer(this);
+    QObject::connect(dataSendTimer_, &QTimer::timeout, this, &ImuSensor::sendBufferedData);
+
+    // 初始化看门狗定时器（此项目的采集线程为阻塞循环，不依赖 Qt 事件循环；
+    // 所以不启动 QTimer 看门狗，而是在采集线程内做超时检测和重连。）
+    watchdogTimer_ = new QTimer(this);
+    QObject::connect(watchdogTimer_, &QTimer::timeout, this, &ImuSensor::onWatchdogTimeout);
+
+    LOG_INFO("IMU sensor initialized");
+}
+
+ImuSensor::~ImuSensor()
+{
+    // 停止定时器
+    if (dataSendTimer_) {
+        dataSendTimer_->stop();
+    }
+    if (watchdogTimer_) {
+        watchdogTimer_->stop();
+    }
+    
+    // 清理 loader 资源
+    if (imuLoader_) {
+        delete imuLoader_;
+        imuLoader_ = nullptr;
+    }
+}
+
+bool ImuSensor::connect()
+{
+    LOG_INFO("Connecting to IMU: %s, baudrate: %d", port_.toStdString().c_str(), baudrate_);
+    
+    if (!port_.isEmpty()) {
+        try {
+            if (imuLoader_) {
+                // 删除旧的loader
+                delete imuLoader_;
+                imuLoader_ = nullptr;
+            }
+            
+            // 创建新的loader，使用当前的串口参数
+            imuLoader_ = new ImuSerialLoader(port_.toStdString(), baudrate_, 200);
+            if (imuLoader_->isOpen()) {
+                connected_ = true;
+                LOG_INFO("IMU connected successfully");
+                return true;
+            } else {
+                LOG_Error("Failed to open IMU serial port");
+                delete imuLoader_;
+                imuLoader_ = nullptr;
+                connected_ = false;
+                return false;
+            }
+        } catch (const std::exception& e) {
+            LOG_Error("Exception connecting to IMU: %s", e.what());
+            delete imuLoader_;
+            imuLoader_ = nullptr;
+            connected_ = false;
+            return false;
+        }
+    } else {
+        LOG_Error("IMU port not specified");
+        connected_ = false;
+        return false;
+    }
+}
+
+void ImuSensor::disconnect()
+{
+    LOG_INFO("Disconnecting IMU");
+    
+    if (imuLoader_) {
+        delete imuLoader_;
+        imuLoader_ = nullptr;
+    }
+    connected_ = false;
+    running_ = false;
+}
+
+bool ImuSensor::start()
+{
+    LOG_INFO("Starting IMU data collection");
+    
+    if (!connected_) {
+        LOG_Error("IMU not connected, cannot start");
         return false;
     }
     
-    // 设置运行标志
-    gnssRunning_ = true;
+    running_ = true;
     
-    if (!gnssThread_->isRunning()) {
-        // 确保之前的连接已经断开
-        disconnect(gnssThread_, &QThread::started, this, &SensorInterface::gnssDataCollectionThread);
-        // 连接GPS数据采集槽函数
-        connect(gnssThread_, &QThread::started, this, &SensorInterface::gnssDataCollectionThread, Qt::DirectConnection);
-        gnssThread_->start();
-        LOG_INFO("GPS data collection thread started");
-        return true;
-    } else {
-        LOG_INFO("GPS data collection thread is already running");
-        return true;
-    }
-}
-
-/**
- * @brief 停止GPS数据采集
- */
-void SensorInterface::stopGPS()
-{
-    LOG_INFO("Stopping GPS data collection...");
-    
-    // 首先设置运行标志为false，使线程能够退出循环
-    gnssRunning_ = false;
-    
-    // 等待线程停止
-    if (gnssThread_->isRunning()) {
-        // 等待线程退出，设置超时时间为2秒
-        if (!gnssThread_->wait(500)) {
-            LOG_WARN("GPS thread did not stop within timeout, forcing termination");
-            // 强制终止线程
-            gnssThread_->terminate();
-            gnssThread_->wait();
-        }
-        LOG_INFO("GPS data collection thread stopped");
-    }
-    
-    // 重置GPS加载器
-    if (gnssLoader_) {
-        gnssLoader_.reset();
-        gnssConnected_ = false;
-        LOG_INFO("GPS loader reset");
-    }
-}
-
-
-
-/**
- * @brief 连接IMU模块
- * @return 是否连接成功
- */
-bool SensorInterface::connectIMU()
-{
-    LOG_INFO("Connecting to IMU module...");
-    
-    // 保存旧的IMU连接状态
-    bool oldImuConnected = imuConnected_;
-    
-    // 初始化IMU加载器
-    if (!imuPort_.isEmpty()) {
-        try {
-            LOG_INFO("Initializing IMU loader: %s, baudrate: %d", imuPort_.toStdString().c_str(), imuBaudrate_);
-            imuLoader_ = std::make_unique<ImuSerialLoader>(imuPort_.toStdString(), imuBaudrate_);
-            imuConnected_ = imuLoader_->isOpen();
-            if (!imuConnected_) {
-                LOG_ERROR("Failed to open IMU serial port: %s", imuPort_.toStdString().c_str());
-            } else {
-                LOG_INFO("IMU serial port opened successfully: %s, baudrate: %d", imuPort_.toStdString().c_str(), imuBaudrate_);
-            }
-        } catch (const std::exception& e) {
-            LOG_ERROR("Error initializing IMU loader: %s", e.what());
-            imuConnected_ = false;
+    if (!thread_->isRunning()) {
+        // 启动线程（会将对象移动到线程）
+        if (startThread()) {
+            // 先断开可能存在的旧连接
+            QObject::disconnect(thread_, &QThread::started, this, &ImuSensor::imuDataCollectionThread);
+            // 连接数据采集槽函数（使用直接连接，因为对象已在新线程中）
+            QObject::connect(thread_, &QThread::started, this, &ImuSensor::imuDataCollectionThread, Qt::DirectConnection);
+            
+            LOG_INFO("ImuSensor thread started");
+            return true;
+        } else {
+            LOG_Error("Failed to start ImuSensor thread");
+            return false;
         }
     } else {
-        LOG_INFO("No IMU port specified");
-        imuConnected_ = false;
+        LOG_INFO("ImuSensor thread already running");
+        return true;
     }
-    
-    
-    // 记录连接状态变化
-    if (imuConnected_ != oldImuConnected) {
-        LOG_INFO("IMU connection status changed: %s", imuConnected_ ? "Connected" : "Disconnected");
-    }
-
-    // 如果成功连接，发送IMU数据更新信号
-    if (imuConnected_) {
-        // 连接成功时不需要发送数据信号，因为还没有实际数据
-    }
-    
-    return imuConnected_;
 }
 
-/**
- * @brief 断开IMU模块连接
- */
-void SensorInterface::disconnectIMU()
+void ImuSensor::stop()
 {
-    LOG_INFO("Disconnecting from IMU module...");
+    LOG_INFO("Stopping ImuSensor");
+    running_ = false;
     
-    // 保存旧的IMU连接状态
-    bool wasImuConnected = imuConnected_;
-    
-    // 清理IMU加载器
+    if (thread_->isRunning()) {
+        // 停止线程
+        stopThread();
+        LOG_INFO("ImuSensor thread stopped");
+    }
+}
+
+void* ImuSensor::getLatestData() const
+{
     if (imuLoader_) {
-        imuLoader_.reset();
-        imuConnected_ = false;
-        LOG_INFO("IMU loader reset");
-    }
-    
-    // 记录连接状态变化
-    if (wasImuConnected) {
-        LOG_INFO("IMU connection status changed: Disconnected");
-        // 断开连接后不需要发送数据信号，因为连接状态变化应该通过其他方式通知UI
-    }
-    
-    LOG_INFO("IMU disconnected");
-}
-
-/**
- * @brief 连接GPS模块
- * @return 是否连接成功
- */
-bool SensorInterface::connectGPS()
-{
-    LOG_INFO("Connecting to GPS module...");
-    
-    // 保存旧的GPS连接状态
-    bool oldGnssConnected = gnssConnected_;
-    
-    // 初始化GNSS加载器
-    if (!gnssPort_.isEmpty()) {
         try {
-            LOG_INFO("Initializing GNSS loader: %s, baudrate: %d", gnssPort_.toStdString().c_str(), gnssBaudrate_);
-            gnssLoader_ = std::make_unique<GnssSerialLoader>(gnssPort_.toStdString(), gnssBaudrate_);
-            gnssConnected_ = gnssLoader_->isOpen();
-            if (!gnssConnected_) {
-                LOG_ERROR("Failed to open GNSS serial port: %s", gnssPort_.toStdString().c_str());
-            } else {
-                LOG_INFO("GNSS serial port opened successfully: %s, baudrate: %d", gnssPort_.toStdString().c_str(), gnssBaudrate_);
-            }
-        } catch (const std::exception& e) {
-            LOG_ERROR("Error initializing GNSS loader: %s", e.what());
-            gnssConnected_ = false;
+            IMU* imuData = new IMU(imuLoader_->next());
+            return imuData;
+        } catch (...) {
+            return nullptr;
         }
-    } else {
-        LOG_INFO("No GNSS port specified");
-        gnssConnected_ = false;
     }
-    
-    
-    // 记录连接状态变化
-    if (gnssConnected_ != oldGnssConnected) {
-        LOG_INFO("GNSS connection status changed: %s", gnssConnected_ ? "Connected" : "Disconnected");
-    }
-
-    // 如果成功连接，发送GPS数据更新信号
-    if (gnssConnected_) {
-        // 连接成功时不需要发送数据信号，因为还没有实际数据
-    }
-
-    
-    return gnssConnected_;
+    return nullptr;
 }
 
-/**
- * @brief 断开GPS模块连接
- */
-void SensorInterface::disconnectGPS()
+ImuSerialLoader* ImuSensor::getLoader() const
 {
-    LOG_INFO("Disconnecting from GPS module...");
-    
-    // 保存旧的GPS连接状态
-    bool wasGnssConnected = gnssConnected_;
-    
-    // 清理GNSS加载器
-    if (gnssLoader_) {
-        gnssLoader_.reset();
-        gnssConnected_ = false;
-        LOG_INFO("GNSS loader reset");
-    }
-    
-    // 记录连接状态变化
-    if (wasGnssConnected) {
-        LOG_INFO("GNSS connection status changed: Disconnected");
-        // 断开连接后不需要发送数据信号，因为连接状态变化应该通过其他方式通知UI
-    }
-    
-    LOG_INFO("GPS disconnected");
+    return imuLoader_;
 }
 
-
-
-/**
- * @brief 获取IMU原始数据
- * @return IMU原始数据
- */
-QString SensorInterface::getRawImuData() const
-{
-    return rawImuData_;
-}
-
-/**
- * @brief 获取GNSS原始数据
- * @return GNSS原始数据
- */
-QString SensorInterface::getRawGnssData() const
-{
-    return rawGnssData_;
-}
-
-/**
- * @brief 设置IMU串口参数
- * @param imuPort IMU串口端口
- * @param imuBaudrate IMU串口波特率
- */
-void SensorInterface::setImuSerialParams(const QString &imuPort, int imuBaudrate)
+void ImuSensor::setSerialParams(const QString &port, int baudrate)
 {
     LOG_INFO("Updating IMU serial parameters: port=%s, baud=%d", 
-             imuPort.toStdString().c_str(), imuBaudrate);
+             port.toStdString().c_str(), baudrate);
     
     // 保存旧的IMU连接状态
-    bool wasImuConnected = imuConnected_;
+    bool wasConnected = connected_;
     
     // 更新IMU串口参数
-    imuPort_ = imuPort;
-    imuBaudrate_ = imuBaudrate;
+    SensorBase::setSerialParams(port, baudrate);
     
     // 如果IMU已经连接，重新连接IMU
-    if (wasImuConnected) {
-        LOG_INFO("IMU was connected, reconnecting with new parameters");
-        disconnectIMU();
-        bool reconnected = connectIMU();
-        LOG_INFO("IMU reconnection %s", reconnected ? "successful" : "failed");
-        
-        // 重新连接后不需要发送数据信号，因为还没有实际数据
+    if (wasConnected) {
+        LOG_INFO("ImuSensor was connected, reconnecting with new parameters");
+        stop();
+        disconnect();
+        bool reconnected = connect();
+        LOG_INFO("ImuSensor reconnection %s", reconnected ? "successful" : "failed");
         if (reconnected) {
-            // 重新连接成功时不需要发送数据信号，等待实际数据到来时再发送
+            start();
         }
     } else {
-        LOG_INFO("IMU was not connected, parameters updated for future connection");
+        LOG_INFO("ImuSensor was not connected, parameters updated for future connection");
     }
     
-    LOG_INFO("IMU serial parameters updated successfully: port=%s, baud=%d", 
-             imuPort.toStdString().c_str(), imuBaudrate);
+    LOG_INFO("ImuSensor serial parameters updated successfully: port=%s, baud=%d", 
+             port.toStdString().c_str(), baudrate);
 }
 
-/**
- * @brief 设置GPS串口参数
- * @param gnssPort GNSS串口端口
- * @param gnssBaudrate GNSS串口波特率
- */
-void SensorInterface::setGpsSerialParams(const QString &gnssPort, int gnssBaudrate)
+void ImuSensor::imuDataCollectionThread()
+{
+    LOG_INFO("IMU data collection thread started");
+
+    // 时间同步执行标志，用于控制只输出一次同步日志
+    bool timeSyncLogExecuted = false;
+
+    // 错误计数和重连参数
+    int consecutiveErrorCount = 0;
+    const int MAX_CONSECUTIVE_ERRORS = 50; // 允许的最大连续错误数
+    const int RECONNECT_DELAY_MS = 500; // 重连前的延时
+
+    // 缓冲区监控参数
+    int noDataCount = 0; // 连续无数据计数
+    const int MAX_NO_DATA_COUNT = 200; // 最大连续无数据次数（约2秒）
+    qint64 lastBufferSize = 0;
+    int bufferCheckCounter = 0;
+    const int BUFFER_CHECK_INTERVAL = 100; // 每100次循环检查一次缓冲区
+
+    // 初始化最后有效数据计时器（用于 1s 假死检测）
+    lastValidDataTimer_.start();
+
+    while (running_ && connected_ && imuLoader_) {
+        try {
+            // 检查 IMU 加载器是否打开
+            if (!imuLoader_->isOpen()) {
+                LOG_Error("IMU serial port closed unexpectedly, attempting to reconnect...");
+                consecutiveErrorCount++;
+
+                if (consecutiveErrorCount >= MAX_CONSECUTIVE_ERRORS) {
+                    LOG_Error("Too many consecutive errors (%d), stopping IMU data collection", consecutiveErrorCount);
+                    running_ = false;
+                    connected_ = false;
+                    break;
+                }
+
+                // 短暂延时后重试
+                QThread::msleep(RECONNECT_DELAY_MS);
+                continue;
+            }
+
+            // 定期检查缓冲区状态
+            bufferCheckCounter++;
+            if (bufferCheckCounter >= BUFFER_CHECK_INTERVAL) {
+                bufferCheckCounter = 0;
+                qint64 available = imuLoader_->bytesAvailable();
+
+                // 检测缓冲区是否持续增长（数据积压）
+                if (available > 4096) {
+                    LOG_WARN("IMU buffer overflow detected (%lld bytes), clearing buffer", available);
+                    imuLoader_->clearBuffer();
+                    noDataCount = 0;
+                    lastBufferSize = 0;
+                } else if (available > 2048 && available >= lastBufferSize) {
+                    LOG_WARN("IMU buffer growing (%lld bytes), potential data backlog", available);
+                }
+                lastBufferSize = available;
+            }
+
+            // 重置错误计数
+            consecutiveErrorCount = 0;
+
+            // 获取下一条 IMU 数据
+            IMU imuData = imuLoader_->next();
+
+            // 1s 假死检测：超过阈值无有效数据则执行恢复
+            if (lastValidDataTimer_.isValid() && lastValidDataTimer_.elapsed() > 1000) {
+                LOG_WARN("IMU watchdog(thread): no valid data for %lld ms, attempting reconnect", (long long)lastValidDataTimer_.elapsed());
+
+                // 清缓冲（如果有积压）
+                qint64 available = imuLoader_->bytesAvailable();
+                if (available > 0) {
+                    LOG_WARN("IMU watchdog(thread): %lld bytes available, clearing buffer", (long long)available);
+                    imuLoader_->clearBuffer();
+                }
+
+                // 重连（删除旧 loader 再 new）
+                const QString port = port_;
+                const int baud = baudrate_;
+
+                delete imuLoader_;
+                imuLoader_ = nullptr;
+                connected_ = false;
+
+                QThread::msleep(100);
+
+                if (!port.isEmpty()) {
+                    imuLoader_ = new ImuSerialLoader(port.toStdString(), baud, 200);
+                    if (imuLoader_->isOpen()) {
+                        connected_ = true;
+                        lastValidDataTimer_.restart();
+                        LOG_INFO("IMU watchdog(thread): reconnect successful (port=%s, baud=%d)", port.toStdString().c_str(), baud);
+                    } else {
+                        LOG_Error("IMU watchdog(thread): reconnect failed (port=%s, baud=%d)", port.toStdString().c_str(), baud);
+                        delete imuLoader_;
+                        imuLoader_ = nullptr;
+                        connected_ = false;
+                        QThread::msleep(500);
+                    }
+                }
+
+                continue;
+            }
+
+            // 如果 IMU 数据有效（time 不为 0），实时发送
+            if (imuData.time > 0) {
+                // 刷新“最后有效数据”计时器（看门狗使用）
+                lastValidDataTimer_.restart();
+
+                // 如果时间已同步，更新 gpstime、synced 标志和 dt 字段
+                if (isTimeSynced()) {
+                    imuData.gpstime = imuData.timestamp + getTimeSyncDt();
+                    imuData.synced = true;
+                    imuData.dt = getTimeSyncDt();
+
+                    // 只输出一次同步日志
+                    if (!timeSyncLogExecuted) {
+                        LOG_INFO("ImuSensor: Time synchronized - system timestamp: %.3f, GPS time: %.3f, dt: %.3f", imuData.timestamp, imuData.gpstime, imuData.dt);
+                        timeSyncLogExecuted = true;
+                    }
+                }
+
+                // 实时发送数据
+                emit imuDataReceived(imuData);
+                noDataCount = 0; // 重置无数据计数
+
+                // 有数据时短暂休眠
+                QThread::msleep(1);
+            } else {
+                // 无效数据时增加计数
+                noDataCount++;
+
+                // 如果长时间没有有效数据，检查是否需要清理缓冲区
+                if (noDataCount >= MAX_NO_DATA_COUNT) {
+                    qint64 available = imuLoader_->bytesAvailable();
+                    if (available > 1024) {
+                        LOG_WARN("IMU: No valid data for %d cycles, but %lld bytes in buffer, clearing",
+                                noDataCount, available);
+                        imuLoader_->clearBuffer();
+                    }
+                    noDataCount = 0;
+                }
+
+                // 没有数据时休眠更长时间，避免空转
+                QThread::msleep(10);
+            }
+        } catch (const std::exception& e) {
+            LOG_Error("Exception in IMU data collection: %s", e.what());
+            consecutiveErrorCount++;
+
+            if (consecutiveErrorCount >= MAX_CONSECUTIVE_ERRORS) {
+                LOG_Error("Too many consecutive exceptions (%d), stopping IMU data collection", consecutiveErrorCount);
+                // 继续循环，但标记为错误状态
+                consecutiveErrorCount = 0;
+                QThread::msleep(RECONNECT_DELAY_MS);
+            }
+        } catch (...) {
+            LOG_Error("Unknown exception in IMU data collection");
+            consecutiveErrorCount++;
+
+            if (consecutiveErrorCount >= MAX_CONSECUTIVE_ERRORS) {
+                LOG_Error("Too many consecutive unknown exceptions (%d), stopping IMU data collection", consecutiveErrorCount);
+                consecutiveErrorCount = 0;
+                QThread::msleep(RECONNECT_DELAY_MS);
+            }
+        }
+    }
+
+    // 发送剩余的数据
+    if (!imuDataBuffer_.empty()) {
+        sendBufferedData();
+    }
+
+    LOG_INFO("IMU data collection thread stopped");
+}
+
+void ImuSensor::sendBufferedData()
+{
+    if (imuDataBuffer_.empty()) {
+        return;
+    }
+    
+    // 批量发送缓存的数据
+    for (const IMU& imuData : imuDataBuffer_) {
+        emit imuDataReceived(imuData);
+    }
+    
+    LOG_DEBUG("IMU: Sent %zu buffered data frames", imuDataBuffer_.size());
+    imuDataBuffer_.clear();
+}
+
+void ImuSensor::onWatchdogTimeout()
+{
+    // 看门狗逻辑在 imuDataCollectionThread() 内执行。
+}
+
+// GpsSensor 实现
+GpsSensor::GpsSensor(QObject *parent) :
+    SensorBase(parent),
+    gnssLoader_(nullptr),
+    validGgaCount_(0),
+    dataSendTimer_(nullptr),
+    watchdogTimer_(nullptr)
+{
+    // 初始化数据发送定时器
+    dataSendTimer_ = new QTimer(this);
+    QObject::connect(dataSendTimer_, &QTimer::timeout, this, &GpsSensor::sendBufferedData);
+
+    // 初始化看门狗定时器（采集线程为阻塞循环；超时检测在采集线程内执行）
+    watchdogTimer_ = new QTimer(this);
+    QObject::connect(watchdogTimer_, &QTimer::timeout, this, &GpsSensor::onWatchdogTimeout);
+
+    watchdogTimeoutStrikes_ = 0;
+
+    LOG_INFO("GPS sensor initialized");
+}
+
+GpsSensor::~GpsSensor()
+{
+    // 停止定时器
+    if (dataSendTimer_) {
+        dataSendTimer_->stop();
+    }
+    if (watchdogTimer_) {
+        watchdogTimer_->stop();
+    }
+    
+    // 清理 loader 资源
+    if (gnssLoader_) {
+        delete gnssLoader_;
+        gnssLoader_ = nullptr;
+    }
+}
+
+bool GpsSensor::connect()
+{
+    LOG_INFO("Connecting to GPS: %s, baudrate: %d", port_.toStdString().c_str(), baudrate_);
+    
+    if (!port_.isEmpty()) {
+        try {
+            if (gnssLoader_) {
+                // 删除旧的loader
+                delete gnssLoader_;
+                gnssLoader_ = nullptr;
+            }
+            
+            // 创建新的loader，使用当前的串口参数
+            gnssLoader_ = new GnssSerialLoader(port_.toStdString(), baudrate_);
+            if (gnssLoader_->isOpen()) {
+                connected_ = true;
+                LOG_INFO("GPS connected successfully");
+                return true;
+            } else {
+                LOG_Error("Failed to open GPS serial port");
+                delete gnssLoader_;
+                gnssLoader_ = nullptr;
+                connected_ = false;
+                return false;
+            }
+        } catch (const std::exception& e) {
+            LOG_Error("Exception connecting to GPS: %s", e.what());
+            delete gnssLoader_;
+            gnssLoader_ = nullptr;
+            connected_ = false;
+            return false;
+        }
+    } else {
+        LOG_Error("GPS port not specified");
+        connected_ = false;
+        return false;
+    }
+}
+
+void GpsSensor::disconnect()
+{
+    LOG_INFO("Disconnecting GPS");
+    
+    if (gnssLoader_) {
+        delete gnssLoader_;
+        gnssLoader_ = nullptr;
+    }
+    connected_ = false;
+    running_ = false;
+}
+
+bool GpsSensor::start()
+{
+    LOG_INFO("Starting GpsSensor");
+    
+    if (!connected_) {
+        LOG_Error("GPS not connected, cannot start");
+        return false;
+    }
+    
+    running_ = true;
+    
+    if (!thread_->isRunning()) {
+        // 启动线程（会将对象移动到线程）
+        if (startThread()) {
+            // 先断开可能存在的旧连接
+            QObject::disconnect(thread_, &QThread::started, this, &GpsSensor::gpsDataCollectionThread);
+            // 连接数据采集槽函数（使用直接连接，因为对象已在新线程中）
+            QObject::connect(thread_, &QThread::started, this, &GpsSensor::gpsDataCollectionThread, Qt::DirectConnection);
+            
+            LOG_INFO("GpsSensor thread started");
+            return true;
+        } else {
+            LOG_Error("Failed to start GpsSensor thread");
+            return false;
+        }
+    } else {
+        LOG_INFO("GpsSensor thread already running");
+        return true;
+    }
+}
+
+void GpsSensor::stop()
+{
+    LOG_INFO("Stopping GpsSensor");   
+    running_ = false;
+    
+    if (thread_->isRunning()) {
+        // 停止线程
+        stopThread();
+        LOG_INFO("GpsSensor thread stopped");
+    }
+}
+
+void* GpsSensor::getLatestData() const
+{
+    if (gnssLoader_) {
+        try {
+            GNSS* gnssData = new GNSS(gnssLoader_->next());
+            return gnssData;
+        } catch (...) {
+            return nullptr;
+        }
+    }
+    return nullptr;
+}
+
+GnssSerialLoader* GpsSensor::getLoader() const
+{
+    return gnssLoader_;
+}
+
+void GpsSensor::setSerialParams(const QString &port, int baudrate)
 {
     LOG_INFO("Updating GPS serial parameters: port=%s, baud=%d", 
-             gnssPort.toStdString().c_str(), gnssBaudrate);
+             port.toStdString().c_str(), baudrate);
     
     // 保存旧的GPS连接状态
-    bool wasGnssConnected = gnssConnected_;
+    bool wasConnected = connected_;
     
     // 更新GPS串口参数
-    gnssPort_ = gnssPort;
-    gnssBaudrate_ = gnssBaudrate;
+    SensorBase::setSerialParams(port, baudrate);
     
     // 如果GPS已经连接，重新连接GPS
-    if (wasGnssConnected) {
+    if (wasConnected) {
         LOG_INFO("GPS was connected, reconnecting with new parameters");
-        disconnectGPS();
-        bool reconnected = connectGPS();
+        stop();
+        disconnect();
+        bool reconnected = connect();
         LOG_INFO("GPS reconnection %s", reconnected ? "successful" : "failed");
-        
-        // 重新连接后不需要发送数据信号，因为还没有实际数据
         if (reconnected) {
-            // 重新连接成功时不需要发送数据信号，等待实际数据到来时再发送
+            start();
         }
     } else {
         LOG_INFO("GPS was not connected, parameters updated for future connection");
     }
     
     LOG_INFO("GPS serial parameters updated successfully: port=%s, baud=%d", 
-             gnssPort.toStdString().c_str(), gnssBaudrate);
-}
-
-
-
-/**
- * @brief 获取IMU加载器指针
- * @return IMU加载器指针
- */
-ImuSerialLoader* SensorInterface::getImuLoader() const
-{
-    return imuLoader_.get();
+             port.toStdString().c_str(), baudrate);
 }
 
 /**
- * @brief 获取GNSS加载器指针
- * @return GNSS加载器指针
+ * @brief 时间同步方法，为所有传感器同步时间
+ * @param gnssData GNSS数据
  */
-GnssSerialLoader* SensorInterface::getGnssLoader() const
+void GpsSensor::syncTime(const GNSS& gnssData)
 {
-    return gnssLoader_.get();
-}
-
-/**
- * @brief 检查IMU是否连接
- * @return IMU是否连接
- */
-bool SensorInterface::isImuConnected() const
-{
-    return imuConnected_;
-}
-
-/**
- * @brief 检查GNSS是否连接
- * @return GNSS是否连接
- */
-bool SensorInterface::isGnssConnected() const
-{
-    return gnssConnected_;
-}
-
-/**
- * @brief IMU数据采集线程函数
- * @note 在独立线程中运行，实时读取和处理IMU数据
- */
-void SensorInterface::imuDataCollectionThread()
-{
-    LOG_INFO("IMU data collection thread started");
-    
-    while (imuRunning_ && imuConnected_ && imuLoader_) {
-        try {
-            // 实时读取IMU数据
-            const IMU& imuData = imuLoader_->next();
-            
-            // 更新最新IMU数据
-            latestImuData_ = imuData;
-            
-            // 构建原始数据字符串
-            std::stringstream ss;
-            ss << std::fixed << std::setprecision(3);
-            ss << "IMU Data: time=" << imuData.time 
-               << " acc=\"[" << imuData.dvel[0]/imuData.dt << ", " << imuData.dvel[1]/imuData.dt << ", " << imuData.dvel[2]/imuData.dt << "]\""
-               << " gyro=\"[" << imuData.dtheta[0]/imuData.dt * 180.0/M_PI << ", " << imuData.dtheta[1]/imuData.dt * 180.0/M_PI << ", " << imuData.dtheta[2]/imuData.dt * 180.0/M_PI << "]\""
-               << " mag=\"[" << imuData.magnetic_field[0] << ", " << imuData.magnetic_field[1] << ", " << imuData.magnetic_field[2] << "]\""
-               << " temp=" << imuData.temperature
-               << " mag_heading=" << imuData.magnetic_heading
-               << " true_heading=" << imuData.true_heading;
-            rawImuData_ = QString::fromStdString(ss.str());
-            
-            // 记录IMU数据日志
-            LOG_DEBUG("IMU data received: time=%f", imuData.time);
-            
-            // 发送IMU数据更新信号
-            emit imuDataReceived(imuData);
-        } catch (const std::exception& e) {
-            LOG_ERROR("Error reading IMU data: %s", e.what());
-            // 继续尝试，不中断数据采集
-            QThread::msleep(10); // 短暂休眠，避免错误时CPU占用过高
-        }
+    // 检查数据是否有效
+    if (!gnssData.isvalid) {
+        return;
     }
     
-    LOG_INFO("IMU data collection thread stopped");
+    // 如果已经同步过，不再进行同步
+    if (isTimeSynced()) {
+        return;
+    }
+    
+    // 记录卫星时间（UTC时间）与本地时间的差值
+    double systemTimestamp = gnssData.timestamp;
+    double localtime = gnssData.time;
+    double timeDifference = localtime - systemTimestamp;
+    
+    // 增加有效的GGA消息计数
+    validGgaCount_++;
+    
+    // 记录本地时间差值
+    if (validGgaCount_ <= 10) {
+        localTimeDifferences_.push_back(timeDifference);
+        LOG_DEBUG("GPS: Recording local time difference %d: %.3f", validGgaCount_, timeDifference);
+    }
+    
+    // 当收集到10个有效的GGA消息后，计算平均差值作为同步用的dt值
+    if (validGgaCount_ == 10) {
+        // 计算平均差值
+        double sum = 0.0;
+        for (double diff : localTimeDifferences_) {
+            sum += diff;
+        }
+        double avgTimeDifference = sum / localTimeDifferences_.size();
+        
+        // 计算平均本地时间
+        double avgLocalTime = systemTimestamp + avgTimeDifference;
+        
+        // 使用父类的syncTime方法设置时间同步
+        SensorBase::syncTime(systemTimestamp, avgLocalTime);
+        
+        // 发出时间同步完成信号
+        emit timeSyncCompleted(getTimeSyncDt());
+        
+        LOG_INFO("GPS: Time sync completed, dt=%.3f seconds", getTimeSyncDt());
+        LOG_INFO("GPS: Collected %d valid GGA messages for time sync", localTimeDifferences_.size());
+    }
 }
 
-/**
- * @brief GPS数据采集线程函数
- * @note 在独立线程中运行，实时读取和处理GPS数据
- */
-void SensorInterface::gnssDataCollectionThread()
+void GpsSensor::gpsDataCollectionThread()
 {
     LOG_INFO("GPS data collection thread started");
-    
-    while (gnssRunning_ && gnssConnected_ && gnssLoader_) {
+
+    // 错误计数和重连参数
+    int consecutiveErrorCount = 0;
+    const int MAX_CONSECUTIVE_ERRORS = 30;
+    const int RECONNECT_DELAY_MS = 500;
+
+    // 缓冲区监控参数
+    int noDataCount = 0;
+    const int MAX_NO_DATA_COUNT = 100;
+    qint64 lastBufferSize = 0;
+    int bufferCheckCounter = 0;
+    const int BUFFER_CHECK_INTERVAL = 50;
+
+    // 性能监控参数 - 改为按有效数据计数
+    int validDataCount = 0;
+    int invalidDataCount = 0;
+    int totalLoopCount = 0;
+    QElapsedTimer perfTimer;
+    QElapsedTimer sessionTimer; // 会话总时间
+    perfTimer.start();
+    sessionTimer.start();
+
+    // 上次输出性能日志时的有效数据数
+    int lastReportedValidCount = 0;
+    const int REPORT_INTERVAL = 500; // 每500个有效数据输出一次
+
+    // 初始化最后有效数据计时器（用于 1s 假死检测）
+    lastValidDataTimer_.start();
+
+    // GPS 看门狗策略：每次有效数据重置计时；若连续 2 次检查均超过 1s 无有效数据，则重连。
+    watchdogTimeoutStrikes_ = 0;
+
+    while (running_ && connected_ && gnssLoader_) {
         try {
-            // 实时读取GPS数据
-            const GNSS& gnssData = gnssLoader_->next();
-            
-            // 更新最新GNSS数据
-            latestGnssData_ = gnssData;
-            
-            // 构建原始数据字符串
-            std::stringstream ss;
-            ss << std::fixed << std::setprecision(7);
-            ss << "GNSS Data: time=" << gnssData.time 
-               << " pos=\"[" << gnssData.blh[0] << ", " << gnssData.blh[1] << ", " << gnssData.blh[2] << "]\""
-               << " vel=\"[" << gnssData.vel[0] << ", " << gnssData.vel[1] << ", " << gnssData.vel[2] << "]\""
-               << " hdop=" << gnssData.hdop 
-               << " vdop=" << gnssData.vdop 
-               << " pdop=" << gnssData.pdop 
-               << " used_sv=" << gnssData.used_sv 
-               << " visible_sv=" << gnssData.visible_sv
-               << " fix_mode=" << gnssData.fix_mode
-               << " quality=" << gnssData.quality
-               << " valid=" << (gnssData.isvalid ? "true" : "false");
-            rawGnssData_ = QString::fromStdString(ss.str());
-            
-            // 判断GPS数据是否有效
-            bool isValidData = false;
-            
-            // 检查isvalid字段
-            if (gnssData.isvalid) {
-                // 检查经纬度是否有效（非零值）
-                if (gnssData.blh[0] != 0.0 || gnssData.blh[1] != 0.0) {
-                    // 检查卫星数是否合理
-                    if (gnssData.used_sv >= 4) {
-                        // 检查定位质量
-                        if (gnssData.quality >= 1) {
-                            isValidData = true;
+            totalLoopCount++;
+
+            // 检查 GPS 加载器是否打开
+            if (!gnssLoader_->isOpen()) {
+                LOG_Error("GPS serial port closed unexpectedly, attempting to reconnect...");
+                consecutiveErrorCount++;
+
+                if (consecutiveErrorCount >= MAX_CONSECUTIVE_ERRORS) {
+                    LOG_Error("Too many consecutive errors (%d), stopping GPS data collection", consecutiveErrorCount);
+                    running_ = false;
+                    connected_ = false;
+                    break;
+                }
+
+                QThread::msleep(RECONNECT_DELAY_MS);
+                continue;
+            }
+
+            // 定期检查缓冲区状态
+            bufferCheckCounter++;
+            if (bufferCheckCounter >= BUFFER_CHECK_INTERVAL) {
+                bufferCheckCounter = 0;
+                qint64 available = gnssLoader_->bytesAvailable();
+
+                if (available > 4096) {
+                    LOG_WARN("GPS buffer overflow detected (%lld bytes), clearing buffer", available);
+                    gnssLoader_->clearBuffer();
+                    noDataCount = 0;
+                    lastBufferSize = 0;
+                } else if (available > 2048 && available >= lastBufferSize) {
+                    LOG_WARN("GPS buffer growing (%lld bytes), potential data backlog", available);
+                }
+                lastBufferSize = available;
+            }
+
+            consecutiveErrorCount = 0;
+
+            // 获取下一条 GPS 数据
+            GNSS gnssData = gnssLoader_->next();
+
+            // 1s 看门狗（你选择：连续 2 次检查都超过 1s 才重连）
+            if (lastValidDataTimer_.isValid() && lastValidDataTimer_.elapsed() > 1000) {
+                watchdogTimeoutStrikes_++;
+                if (watchdogTimeoutStrikes_ >= 2) {
+                    LOG_WARN("GPS watchdog(thread): no valid data for %lld ms (strikes=%d), attempting reconnect",  
+                             (long long)lastValidDataTimer_.elapsed(), watchdogTimeoutStrikes_);
+
+                    // 先清理缓冲（如果有积压）
+                    qint64 available = gnssLoader_->bytesAvailable();
+                    if (available > 0) {
+                        LOG_WARN("GPS watchdog(thread): %lld bytes available, clearing buffer", (long long)available);
+                        gnssLoader_->clearBuffer();
+                    }
+
+                    const QString port = port_;
+                    const int baud = baudrate_;
+
+                    delete gnssLoader_;
+                    gnssLoader_ = nullptr;
+                    connected_ = false;
+
+                    QThread::msleep(100);
+
+                    if (!port.isEmpty()) {
+                        gnssLoader_ = new GnssSerialLoader(port.toStdString(), baud);
+                        if (gnssLoader_->isOpen()) {
+                            connected_ = true;
+                            lastValidDataTimer_.restart();
+                            watchdogTimeoutStrikes_ = 0;
+                            LOG_INFO("GPS watchdog(thread): reconnect successful (port=%s, baud=%d)", port.toStdString().c_str(), baud);
+                        } else {
+                            LOG_Error("GPS watchdog(thread): reconnect failed (port=%s, baud=%d)", port.toStdString().c_str(), baud);
+                            delete gnssLoader_;
+                            gnssLoader_ = nullptr;
+                            connected_ = false;
+                            QThread::msleep(500);
                         }
                     }
+
+                    continue;
                 }
-            }
-            
-            if (isValidData) {
-                // 记录GPS数据日志
-                LOG_DEBUG("GNSS data received: time=%f, pos=[%.7f, %.7f, %.3f], valid=%s", 
-                         gnssData.time, 
-                         gnssData.blh[0], gnssData.blh[1], gnssData.blh[2],
-                         gnssData.isvalid ? "true" : "false");
-                
-                // 发送GPS数据更新信号
-                emit gnssDataReceived(gnssData);
             } else {
-                // 未解析到有效GPS数据
-                LOG_INFO("未解析到GPS数据: 有效标志=%s, 经纬度=[%.7f, %.7f], 卫星数=%d, 定位质量=%d", 
-                         gnssData.isvalid ? "true" : "false",
-                         gnssData.blh[0], gnssData.blh[1],
-                         gnssData.used_sv,
-                         gnssData.quality);
+                watchdogTimeoutStrikes_ = 0;
             }
+
+            // 进行时间同步
+            syncTime(gnssData);
+
+            // 如果数据有效，实时发送
+            if (gnssData.isvalid) {
+                // 刷新"最后有效数据"计时器（看门狗使用）
+                lastValidDataTimer_.restart();
+                watchdogTimeoutStrikes_ = 0;
+
+                // 实时发送数据（不再做节流，确保 UI 侧能按 20Hz 刷新）
+                emit gnssDataReceived(gnssData);
+
+                validDataCount++;
+                noDataCount = 0;
+
+                // 每500个有效数据输出一次性能统计
+                if (validDataCount - lastReportedValidCount >= REPORT_INTERVAL) {
+                    qint64 elapsed = perfTimer.elapsed();
+                    qint64 sessionElapsed = sessionTimer.elapsed();
+
+                    // 计算统计数据
+                    double avgLoopTime = static_cast<double>(elapsed) / totalLoopCount;
+                    double dataRate = validDataCount * 1000.0 / sessionElapsed;
+                    double validRate = static_cast<double>(validDataCount) / totalLoopCount * 100.0;
+
+                    LOG_INFO("GPS Performance: Valid=%d, Loops=%d, ValidRate=%f, AvgLoop=%f ms, Rate=%f Hz, Buffer=%lld bytes",
+                             validDataCount, totalLoopCount, validRate, avgLoopTime, dataRate, (long long)lastBufferSize);
+
+                    // 重置计数器
+                    lastReportedValidCount = validDataCount;
+                    perfTimer.restart();
+                    totalLoopCount = 0;
+                }
+
+                QThread::msleep(1);
+            } else {
+                invalidDataCount++;
+                noDataCount++;
+
+                if (noDataCount >= MAX_NO_DATA_COUNT) {
+                    qint64 available = gnssLoader_->bytesAvailable();
+                    if (available > 1024) {
+                        LOG_WARN("GPS: No valid data for %d cycles, but %lld bytes in buffer, clearing",
+                                noDataCount, available);
+                        gnssLoader_->clearBuffer();
+                    }
+                    noDataCount = 0;
+                }
+
+                QThread::msleep(10);
+            }
+
         } catch (const std::exception& e) {
-            LOG_ERROR("Error reading GNSS data: %s", e.what());
-            // 继续尝试，不中断数据采集
-            QThread::msleep(10); // 短暂休眠，避免错误时CPU占用过高
+            LOG_Error("Exception in GPS data collection: %s", e.what());
+            consecutiveErrorCount++;
+
+            if (consecutiveErrorCount >= MAX_CONSECUTIVE_ERRORS) {
+                LOG_Error("Too many consecutive exceptions (%d), stopping GPS data collection", consecutiveErrorCount);
+                consecutiveErrorCount = 0;
+                QThread::msleep(RECONNECT_DELAY_MS);
+            }
+        } catch (...) {
+            LOG_Error("Unknown exception in GPS data collection");
+            consecutiveErrorCount++;
+
+            if (consecutiveErrorCount >= MAX_CONSECUTIVE_ERRORS) {
+                LOG_Error("Too many consecutive unknown exceptions (%d), stopping GPS data collection", consecutiveErrorCount);
+                consecutiveErrorCount = 0;
+                QThread::msleep(RECONNECT_DELAY_MS);
+            }
         }
     }
-    
-    LOG_INFO("GPS data collection thread stopped");
+
+    // 发送剩余的数据
+    if (!gnssDataBuffer_.empty()) {
+        sendBufferedData();
+    }
+
+    // 输出最终统计
+    qint64 totalTime = sessionTimer.elapsed();
+    double avgRate = validDataCount * 1000.0 / totalTime;
+    LOG_INFO("GPS data collection thread stopped - Total: Valid=%d, Invalid=%d, Time=%.1fs, AvgRate=%.1f Hz",
+             validDataCount, invalidDataCount, totalTime / 1000.0, avgRate);
 }
 
-
-
-/**
- * @brief 获取系统中所有可用的串口列表
- * @return 可用串口列表
- */
-QList<QSerialPortInfo> SensorInterface::getAvailableSerialPorts()
+void GpsSensor::sendBufferedData()
 {
-    LOG_INFO("Getting available serial ports...");
-    
-    // 获取系统中所有可用的串口
-    QList<QSerialPortInfo> availablePorts = QSerialPortInfo::availablePorts();
-    
-    // 记录串口信息
-    LOG_INFO("Found %d available serial ports:", availablePorts.size());
-    for (const QSerialPortInfo& port : availablePorts) {
-        LOG_INFO("  Port: %s, Description: %s, Manufacturer: %s", 
-                 port.portName().toStdString().c_str(),
-                 port.description().toStdString().c_str(),
-                 port.manufacturer().toStdString().c_str());
+    if (gnssDataBuffer_.empty()) {
+        return;
     }
     
-    return availablePorts;
+    // 批量发送缓存的数据
+    for (const GNSS& gnssData : gnssDataBuffer_) {
+        emit gnssDataReceived(gnssData);
+    }
+    
+    LOG_DEBUG("GPS: Sent %zu buffered data frames", gnssDataBuffer_.size());
+    gnssDataBuffer_.clear();
 }
 
-/**
- * @brief 获取最新的IMU数据
- * @return 最新的IMU数据
- */
-IMU SensorInterface::getLatestImuData() const
+void GpsSensor::onWatchdogTimeout()
 {
-    return latestImuData_;
+    // 看门狗逻辑在 gpsDataCollectionThread() 内执行。
 }
 
-/**
- * @brief 获取最新的GNSS数据
- * @return 最新的GNSS数据
- */
-GNSS SensorInterface::getLatestGnssData() const
-{
-    return latestGnssData_;
-}

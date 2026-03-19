@@ -39,6 +39,11 @@ public:
 
     bool isOpen() const;
 
+    qint64 bytesAvailable() const;
+
+    // 清空缓冲区
+    void clearBuffer();
+
 private:
     SerialPort serial_;
     GNSS gnss_;
@@ -70,7 +75,9 @@ private:
     // 分割字符串
     std::vector<std::string> split(const std::string& str, char delimiter);
     
+    // 解析时间
+    bool parseTime(const std::string& utc_time_str, GNSS& gnss);
     
-};
+}; 
 
 #endif // GNSSSERIALLOADER_H

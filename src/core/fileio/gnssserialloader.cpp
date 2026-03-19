@@ -7,7 +7,7 @@
 #include <Eigen/Geometry>
 
 #include "common/logger.h"
-#include "common/time_sync.h"
+
 
 // 定义M_PI（如果未定义）
 #ifndef M_PI
@@ -22,35 +22,104 @@ GnssSerialLoader::GnssSerialLoader(const std::string& port, int baudrate) {
     } else {
         is_open_ = true;
         gnss_.isvalid = false;
+        // 增加缓冲区大小，提高数据处理能力
+        buffer_.reserve(4096);
     }
 }
 
 const GNSS& GnssSerialLoader::next() {
-    // gnss_.time = 0;
-    // gnss_.blh = Vector3d::Zero();
-    // 不要重置速度值，保留之前从RMC消息中获取的速度
-    // gnss_.vel = Vector3d::Zero();
-    // gnss_.std = Vector3d::Zero();
     gnss_.isvalid = false;
 
-    char buffer[1024] = {0};
+    char buffer[2048] = {0};
     int bytes_read = serial_.read(buffer, sizeof(buffer) - 1);
     if (bytes_read > 0) {
+        // 记录系统时间戳（缓存，避免重复调用）
+        static double last_timestamp = 0;
+        static time_t last_time_t = 0;
+        time_t current_time = time(nullptr);
+        if (current_time != last_time_t) {
+            last_time_t = current_time;
+            last_timestamp = static_cast<double>(current_time);
+        }
+        double batch_timestamp = last_timestamp;
+
         append(buffer, bytes_read);
 
-        size_t start_idx = buffer_.find('$');
+        // 优化：使用索引而不是substr来避免内存分配
+        size_t processed_pos = 0;
+        size_t start_idx = buffer_.find('$', processed_pos);
+
+        // 标记是否找到了GGA消息（位置数据）
+        bool hasPosition = false;
+
         while (start_idx != std::string::npos) {
             size_t end_idx = buffer_.find('\n', start_idx);
             if (end_idx != std::string::npos) {
                 std::string nmea = buffer_.substr(start_idx, end_idx - start_idx + 1);
-                buffer_ = buffer_.substr(end_idx + 1);
+                processed_pos = end_idx + 1;
+
+                // 解析NMEA消息，如果是GGA则标记有位置数据
                 if (parseNMEA(nmea)) {
+                    hasPosition = true;
+                    // 不要立即break，继续解析后续消息（特别是RMC速度）
+                }
+
+                // 如果已经有位置数据，继续解析几条消息以获取速度
+                if (hasPosition) {
+                    // 再解析最多5条消息，寻找RMC速度数据
+                    int extraMessages = 0;
+                    const int MAX_EXTRA = 5;
+
+                    while (extraMessages < MAX_EXTRA) {
+                        start_idx = buffer_.find('$', processed_pos);
+                        if (start_idx == std::string::npos) break;
+
+                        end_idx = buffer_.find('\n', start_idx);
+                        if (end_idx == std::string::npos) break;
+
+                        nmea = buffer_.substr(start_idx, end_idx - start_idx + 1);
+                        processed_pos = end_idx + 1;
+                        parseNMEA(nmea);
+                        extraMessages++;
+
+                        // 如果已经获取到速度数据，可以退出
+                        if (gnss_.vel[0] != 0.0 || gnss_.vel[1] != 0.0) {
+                            break;
+                        }
+                    }
+
+                    // 移除已处理的数据
+                    buffer_.erase(0, processed_pos);
                     break;
                 }
+
+                start_idx = buffer_.find('$', processed_pos);
             } else {
+                // 没有完整消息，保留未处理的数据
                 break;
             }
-            start_idx = buffer_.find('$');
+        }
+
+        // 如果已处理位置大于0但没有找到有效数据，清理已处理部分
+        if (processed_pos > 0 && !hasPosition) {
+            buffer_.erase(0, processed_pos);
+        }
+
+        // 计算时间戳
+        if (gnss_.UtcTime > 0) {
+            gnss_.timestamp = batch_timestamp;
+            gnss_.dt = gnss_.time - batch_timestamp;
+        }
+
+        // 简化日志：只在有效数据时输出关键信息
+        static int valid_count = 0;
+        if (gnss_.isvalid) {
+            valid_count++;
+            // 每100条有效数据输出一次统计
+            if (valid_count % 100 == 0) {
+                LOG_INFO("GNSS: Received %d valid messages, latest - Lat: %.6f, Lon: %.6f, Alt: %.2f, Quality: %d, SV: %d",
+                         valid_count, gnss_.blh[0], gnss_.blh[1], gnss_.blh[2], gnss_.quality, gnss_.used_sv);
+            }
         }
     }
 
@@ -59,6 +128,21 @@ const GNSS& GnssSerialLoader::next() {
 
 bool GnssSerialLoader::isOpen() const {
     return is_open_;
+}
+
+qint64 GnssSerialLoader::bytesAvailable() const {
+    if (!is_open_) {
+        return 0;
+    }
+    // 返回串口可用的字节数
+    return serial_.bytesAvailable();
+}
+
+void GnssSerialLoader::clearBuffer() {
+    // 清空内部缓冲区
+    buffer_.clear();
+    // 清空串口缓冲区
+    serial_.clearBuffer();
 }
 
 void GnssSerialLoader::append(const char* data, int size) {
@@ -86,14 +170,14 @@ int safe_stoi(const std::string& str, int default_val = 0) {
     }
 }
 
-// 度分格式转换为十进制度
-double convert_dm_to_dec(const std::string& dm_str, const std::string& dir_str) {
+// 度分格式转换为十进制度，并提取度、分、秒
+ double convert_dm_to_dec(const std::string& dm_str, const std::string& dir_str, double& degrees, double& minutes, double& seconds) {
     if (dm_str.empty() || dir_str.empty()) {
+        degrees = 0.0;
+        minutes = 0.0;
+        seconds = 0.0;
         return 0.0;
     }
-    
-    double degrees = 0.0;
-    double minutes = 0.0;
     
     // 根据纬度和经度选择不同的度数字符数
     if (dir_str == "N" || dir_str == "S") {
@@ -104,13 +188,21 @@ double convert_dm_to_dec(const std::string& dm_str, const std::string& dir_str) 
         // 经度：3位度数
         degrees = safe_stod(dm_str.substr(0, 3));
         minutes = safe_stod(dm_str.substr(3));
+    } else {
+        degrees = 0.0;
+        minutes = 0.0;
     }
     
-    double decimal_deg = degrees + minutes / 60.0;
+    // 计算秒（保留至少4位小数）
+    seconds = (minutes - static_cast<int>(minutes)) * 60.0;
+    minutes = static_cast<int>(minutes);
+    
+    double decimal_deg = degrees + minutes / 60.0 + seconds / 3600.0;
     
     // 处理方向
     if (dir_str == "S" || dir_str == "W") {
         decimal_deg = -decimal_deg;
+        degrees = -degrees; // 负数表示南纬或西经
     }
     
     return decimal_deg;
@@ -151,484 +243,292 @@ int calculateGPSWeek(int year, int month, int day) {
     return days / 7;
 }
 
+/**
+ * @brief 解析NMEA消息中的UTC时间
+ * @param utc_time_str UTC时间字符串
+ * @param gnss 要更新的GNSS结构体
+ * @return 是否解析成功
+ */
+bool GnssSerialLoader::parseTime(const std::string& utc_time_str, GNSS& gnss) {
+    if (utc_time_str.empty() || utc_time_str.length() < 6) {
+        return false;
+    }
+
+    // 解析时分秒
+    int hour = 0, minute = 0;
+    double second = 0.0;
+
+    hour = safe_stoi(utc_time_str.substr(0, 2));
+    minute = safe_stoi(utc_time_str.substr(2, 2));
+    second = safe_stod(utc_time_str.substr(4));
+
+    // 验证时间有效性
+    if (hour < 0 || hour >= 24 || minute < 0 || minute >= 60 || second < 0 || second >= 60) {
+        return false;
+    }
+
+    // 优化：缓存时区偏移量和日期信息，避免重复计算
+    static int cached_timezone_offset = -1;
+    static int cached_year = 0;
+    static int cached_month = 0;
+    static int cached_day = 0;
+    static time_t cached_date_base = 0;
+
+    // 首次运行或日期变化时计算
+    time_t now = time(nullptr);
+    struct tm tm_now;
+    localtime_s(&tm_now, &now);
+
+    int current_year = tm_now.tm_year + 1900;
+    int current_month = tm_now.tm_mon + 1;
+    int current_day = tm_now.tm_mday;
+
+    // 如果有日期信息，使用GPS提供的日期
+    if (has_date_) {
+        current_year = year_;
+        current_month = month_;
+        current_day = day_;
+    }
+
+    // 检查是否需要重新计算基准时间
+    if (cached_timezone_offset == -1 ||
+        cached_year != current_year ||
+        cached_month != current_month ||
+        cached_day != current_day) {
+
+        // 计算时区偏移（只计算一次）
+        if (cached_timezone_offset == -1) {
+            struct tm tm_local;
+            localtime_s(&tm_local, &now);
+            time_t local_timestamp = mktime(&tm_local);
+
+            struct tm tm_utc;
+            gmtime_s(&tm_utc, &now);
+            time_t utc_now = mktime(&tm_utc);
+
+            cached_timezone_offset = static_cast<int>(difftime(local_timestamp, utc_now));
+        }
+
+        // 计算当天0点的时间戳
+        struct tm tm_base = {0};
+        tm_base.tm_year = current_year - 1900;
+        tm_base.tm_mon = current_month - 1;
+        tm_base.tm_mday = current_day;
+        tm_base.tm_hour = 0;
+        tm_base.tm_min = 0;
+        tm_base.tm_sec = 0;
+        tm_base.tm_isdst = -1;
+
+        cached_date_base = mktime(&tm_base);
+        cached_year = current_year;
+        cached_month = current_month;
+        cached_day = current_day;
+    }
+
+    // 快速计算时间戳：基准时间 + 当天秒数
+    double day_seconds = hour * 3600.0 + minute * 60.0 + second;
+    double utc_time = static_cast<double>(cached_date_base) + day_seconds;
+    double local_time = utc_time + cached_timezone_offset;
+
+    // 格式化UTC日期（使用缓存的日期）
+    char date_buf[20];
+    sprintf(date_buf, "%04d-%02d-%02d", current_year, current_month, current_day);
+    std::string utc_date = date_buf;
+
+    // 保存时间信息
+    gnss.time = local_time;
+    gnss.UtcTime = utc_time;
+    gnss.UtcDate = utc_date;
+
+    return true;
+}
+
 
 bool GnssSerialLoader::parseNMEA(const std::string& nmea) {
-    // 解析ZDA消息获取日期信息（支持GPZDA和GNZDA）
-    if (nmea.substr(0, 6) == "$GNZDA" || nmea.substr(0, 6) == "$GPZDA") {
+    // 快速检查：最小长度和起始字符
+    if (nmea.length() < 7 || nmea[0] != '$') {
+        return false;
+    }
+
+    // 使用字符数组比较，避免substr
+    const char* msg = nmea.c_str();
+
+    // 优先解析GGA消息（最重要：位置、高度、质量）
+    if ((msg[1] == 'G' && msg[2] == 'P' && msg[3] == 'G' && msg[4] == 'G' && msg[5] == 'A') ||
+        (msg[1] == 'G' && msg[2] == 'N' && msg[3] == 'G' && msg[4] == 'G' && msg[5] == 'A')) {
+
         std::vector<std::string> fields = split(nmea, ',');
-        if (fields.size() >= 7) {
-            // 保存日期信息，用于后续计算完整时间戳
-            if (!fields[2].empty() && !fields[3].empty() && !fields[4].empty()) {
+        if (fields.size() >= 15) {
+            // 解析UTC时间
+            parseTime(fields[1], gnss_);
+
+            // 解析纬度
+            double lat_deg, lat_min, lat_sec;
+            gnss_.blh[0] = convert_dm_to_dec(fields[2], fields[3], lat_deg, lat_min, lat_sec);
+            gnss_.min[0] = lat_min;
+            gnss_.sec[0] = lat_sec;
+
+            // 解析经度
+            double lon_deg, lon_min, lon_sec;
+            gnss_.blh[1] = convert_dm_to_dec(fields[4], fields[5], lon_deg, lon_min, lon_sec);
+            gnss_.min[1] = lon_min;
+            gnss_.sec[1] = lon_sec;
+
+            // 解析高度
+            gnss_.blh[2] = safe_stod(fields[9]);
+
+            // 解析quality
+            gnss_.quality = safe_stoi(fields[6]);
+            gnss_.isvalid = (gnss_.quality >= 1);
+
+            // 解析used_sv
+            gnss_.used_sv = safe_stoi(fields[7]);
+
+            // 解析HDOP
+            gnss_.hdop = safe_stod(fields[8]);
+
+            return true; // GGA是完整数据，立即返回
+        }
+    }
+
+    // 次优先：RMC消息（速度和航向）
+    if ((msg[1] == 'G' && msg[2] == 'P' && msg[3] == 'R' && msg[4] == 'M' && msg[5] == 'C') ||
+        (msg[1] == 'G' && msg[2] == 'N' && msg[3] == 'R' && msg[4] == 'M' && msg[5] == 'C')) {
+
+        std::vector<std::string> fields = split(nmea, ',');
+        if (fields.size() >= 9 && !fields[7].empty() && !fields[8].empty()) {
+            // 始终解析速度数据，确保实时更新
+            double speed_knots = safe_stod(fields[7]);
+            double course_deg = safe_stod(fields[8]);
+            double speed_mps = speed_knots * 0.514444;
+            double course_rad = course_deg * M_PI / 180.0;
+
+            gnss_.vel[0] = speed_mps * cos(course_rad);
+            gnss_.vel[1] = speed_mps * sin(course_rad);
+            gnss_.vel[2] = 0.0;
+            gnss_.magnetic_heading = course_deg;
+        }
+        return false;
+    }
+
+    // ZDA消息（日期信息）- 优先级较高，因为影响时间计算
+    if ((msg[1] == 'G' && msg[2] == 'N' && msg[3] == 'Z' && msg[4] == 'D' && msg[5] == 'A') ||
+        (msg[1] == 'G' && msg[2] == 'P' && msg[3] == 'Z' && msg[4] == 'D' && msg[5] == 'A')) {
+
+        if (!has_date_) { // 只在未设置日期时解析
+            std::vector<std::string> fields = split(nmea, ',');
+            if (fields.size() >= 7 && !fields[2].empty() && !fields[3].empty() && !fields[4].empty()) {
                 day_ = safe_stoi(fields[2]);
                 month_ = safe_stoi(fields[3]);
                 year_ = safe_stoi(fields[4]);
                 has_date_ = true;
-                LOG_INFO("GNSS: Got date information - Year: %d, Month: %d, Day: %d", year_, month_, day_);
-                
-                // 计算GPS周数
-                if (year_ >= 1980) {
-                    gps_week_ = calculateGPSWeek(year_, month_, day_);
-                    has_gps_week_ = true;
-                    LOG_INFO("GNSS: Calculated GPS week: %d", gps_week_);
-                }
             }
         }
         return false;
     }
-    
-    // 解析GNGSA消息获取DOP值（支持GPGSA和GNGSA）
-    if (nmea.substr(0, 6) == "$GNGSA" || nmea.substr(0, 6) == "$GPGSA") {
-        std::vector<std::string> fields = split(nmea, ',');
-        if (fields.size() >= 18) {
-            // 解析PDOP、HDOP、VDOP值
-            if (!fields[15].empty()) {
+
+    // GSA消息（DOP值）- 只在HDOP未设置或为0时解析
+    if (gnss_.hdop == 0.0 || gnss_.pdop == 0.0) {
+        if ((msg[1] == 'G' && msg[2] == 'N' && msg[3] == 'G' && msg[4] == 'S' && msg[5] == 'A') ||
+            (msg[1] == 'G' && msg[2] == 'P' && msg[3] == 'G' && msg[4] == 'S' && msg[5] == 'A')) {
+
+            std::vector<std::string> fields = split(nmea, ',');
+            if (fields.size() >= 18) {
                 gnss_.pdop = safe_stod(fields[15]);
-            }
-            if (!fields[16].empty()) {
                 gnss_.hdop = safe_stod(fields[16]);
-            }
-            if (!fields[17].empty()) {
                 gnss_.vdop = safe_stod(fields[17]);
             }
-            LOG_INFO("GNSS: Got DOP values - PDOP: %.2f, HDOP: %.2f, VDOP: %.2f", 
-                     gnss_.pdop, gnss_.hdop, gnss_.vdop);
+            return false;
+        }
+    }
+
+    // VTG消息（地面速度）- 只在ground_speed未设置时解析
+    if (gnss_.ground_speed == 0.0) {
+        if ((msg[1] == 'G' && msg[2] == 'P' && msg[3] == 'V' && msg[4] == 'T' && msg[5] == 'G') ||
+            (msg[1] == 'G' && msg[2] == 'N' && msg[3] == 'V' && msg[4] == 'T' && msg[5] == 'G')) {
+
+            std::vector<std::string> fields = split(nmea, ',');
+            if (fields.size() >= 10) {
+                if (!fields[7].empty()) {
+                    gnss_.ground_speed = safe_stod(fields[7]) / 3.6;
+                } else if (!fields[5].empty()) {
+                    gnss_.ground_speed = safe_stod(fields[5]) * 0.514444;
+                }
+
+                if (!fields[1].empty()) {
+                    gnss_.true_heading = safe_stod(fields[1]);
+                }
+                if (!fields[3].empty() && gnss_.magnetic_heading == 0.0) {
+                    gnss_.magnetic_heading = safe_stod(fields[3]);
+                }
+            }
+            return false;
+        }
+    }
+
+    // GSV消息（可见卫星数）- 只解析第一条消息
+    if ((msg[1] == 'G' && msg[2] == 'P' && msg[3] == 'G' && msg[4] == 'S' && msg[5] == 'V') ||
+        (msg[1] == 'B' && msg[2] == 'D' && msg[3] == 'G' && msg[4] == 'S' && msg[5] == 'V')) {
+
+        // 快速检查是否是第一条消息（避免split）
+        size_t comma1 = nmea.find(',');
+        if (comma1 != std::string::npos) {
+            size_t comma2 = nmea.find(',', comma1 + 1);
+            if (comma2 != std::string::npos) {
+                size_t comma3 = nmea.find(',', comma2 + 1);
+                if (comma3 != std::string::npos) {
+                    // 检查第二个字段是否为'1'
+                    if (nmea[comma2 + 1] == '1' && (nmea[comma2 + 2] == ',' || nmea[comma2 + 2] == '\r')) {
+                        std::vector<std::string> fields = split(nmea, ',');
+                        if (fields.size() >= 4) {
+                            int visible_sv = safe_stoi(fields[3]);
+                            if (msg[1] == 'G' && msg[2] == 'P') {
+                                gnss_.visible_sv = visible_sv;
+                            } else if (msg[1] == 'B' && msg[2] == 'D') {
+                                gnss_.visible_sv += visible_sv;
+                            }
+                        }
+                    }
+                }
+            }
         }
         return false;
     }
-    
-    // 解析GPGSV消息获取GPS可见卫星数
-    if (nmea.substr(0, 6) == "$GPGSV") {
-        std::vector<std::string> fields = split(nmea, ',');
-        if (fields.size() >= 4) {
-            // 解析可见卫星数
-            int current_message = safe_stoi(fields[2]);
-            int visible_sv = safe_stoi(fields[3]);
-            
-            if (current_message == 1) {
-                // 只有第一条消息包含总可见卫星数
-                gnss_.visible_sv = visible_sv;
-                LOG_INFO("GNSS: GPS visible satellites: %d", visible_sv);
-            }
-        }
-        return false;
-    }
-    
-    // 解析BDGSV消息获取北斗可见卫星数
-    if (nmea.substr(0, 6) == "$BDGSV") {
-        std::vector<std::string> fields = split(nmea, ',');
-        if (fields.size() >= 4) {
-            // 解析可见卫星数
-            int current_message = safe_stoi(fields[2]);
-            int visible_sv = safe_stoi(fields[3]);
-            
-            if (current_message == 1) {
-                // 只有第一条消息包含总可见卫星数
-                // 累加北斗可见卫星数
-                gnss_.visible_sv += visible_sv;
-                LOG_INFO("GNSS: BeiDou visible satellites: %d, Total: %d", visible_sv, gnss_.visible_sv);
-            }
-        }
-        return false;
-    }
-    
-    // 解析VTG消息获取速度和航向信息（支持GPVTG和GNVTG）
-    if (nmea.substr(0, 6) == "$GPVTG" || nmea.substr(0, 6) == "$GNVTG") {
-        std::vector<std::string> fields = split(nmea, ',');
-        if (fields.size() >= 10) {
-            // 解析真航向
-            if (!fields[1].empty()) {
-                gnss_.true_heading = safe_stod(fields[1]);
-            }
-            
-            // 解析磁航向
-            if (!fields[3].empty()) {
-                gnss_.magnetic_heading = safe_stod(fields[3]);
-            }
-            
-            // 解析地面速度（ knots 转换为 km/h）
-            if (!fields[5].empty()) {
-                double speed_knots = safe_stod(fields[5]);
-                gnss_.ground_speed = speed_knots * 1.852; // 1 knot = 1.852 km/h
-            }
-            
-            // 解析地面速度（直接读取 km/h）
-            if (!fields[7].empty()) {
-                gnss_.ground_speed = safe_stod(fields[7]);
-            }
-            
-            LOG_INFO("GNSS: Got speed and heading from VTG - Speed: %.2f km/h, True Heading: %.1f deg", 
-                     gnss_.ground_speed, gnss_.true_heading);
-        }
-        return false;
-    }
-    
-    // 解析GST消息获取伪距误差统计信息（支持GPGST和GNGST）
-    if (nmea.substr(0, 6) == "$GPGST" || nmea.substr(0, 6) == "$GNGST") {
-        std::vector<std::string> fields = split(nmea, ',');
-        if (fields.size() >= 9) {
-            // 解析纬度标准差
-            if (!fields[2].empty()) {
+
+    // GST消息（误差统计）- 低优先级，只在需要时解析
+    if (gnss_.sigma_lat_gst == 0.0) {
+        if ((msg[1] == 'G' && msg[2] == 'P' && msg[3] == 'G' && msg[4] == 'S' && msg[5] == 'T') ||
+            (msg[1] == 'G' && msg[2] == 'N' && msg[3] == 'G' && msg[4] == 'S' && msg[5] == 'T')) {
+
+            std::vector<std::string> fields = split(nmea, ',');
+            if (fields.size() >= 9) {
                 gnss_.sigma_lat_gst = safe_stod(fields[2]);
-            }
-            
-            // 解析经度标准差
-            if (!fields[3].empty()) {
                 gnss_.sigma_lon_gst = safe_stod(fields[3]);
-            }
-            
-            // 解析高度标准差
-            if (!fields[4].empty()) {
                 gnss_.sigma_alt_gst = safe_stod(fields[4]);
+                gnss_.pr_rms = safe_stod(fields[5]);
             }
-            
-            // 解析伪距标准差
-            if (!fields[5].empty()) {
-                gnss_.sigma_range = safe_stod(fields[5]);
-            }
-            
-            LOG_INFO("GNSS: Got error statistics from GST - Lat: %.3f m, Lon: %.3f m, Alt: %.3f m, Range: %.3f m", 
-                     gnss_.sigma_lat_gst, gnss_.sigma_lon_gst, gnss_.sigma_alt_gst, gnss_.sigma_range);
-        }
-        return false;
-    }    
-    // 检查是否是GGA消息（包含位置信息，支持GPGGA和GNGGA）
-    if (nmea.substr(0, 6) == "$GPGGA" || nmea.substr(0, 6) == "$GNGGA") {
-        std::vector<std::string> fields = split(nmea, ',');
-        if (fields.size() >= 15) {
-            // 解析时间（HHMMSS.SSS）
-            std::string time_str = fields[1];
-            if (!time_str.empty() && time_str.length() >= 6) {
-                // 解析时分秒，处理边界情况
-                int hour = 0, minute = 0;
-                double second = 0.0;
-                
-                // 安全解析小时
-                if (time_str.length() >= 2) {
-                    hour = safe_stoi(time_str.substr(0, 2));
-                }
-                
-                // 安全解析分钟
-                if (time_str.length() >= 4) {
-                    minute = safe_stoi(time_str.substr(2, 2));
-                }
-                
-                // 安全解析秒
-                if (time_str.length() >= 6) {
-                    second = safe_stod(time_str.substr(4));
-                }
-                
-                // 验证时间有效性
-                if (hour >= 0 && hour < 24 && minute >= 0 && minute < 60 && second >= 0 && second < 60) {
-                    // 计算完整的时间戳，与IMU使用相同的时间系统（从1970年开始的秒数）
-                    time_t timestamp = 0;
-                    struct tm tm_time = {0};
-                    
-                    // 获取当前系统时间作为日期参考
-                    time_t now = time(nullptr);
-                    struct tm tm_now;
-                    localtime_s(&tm_now, &now);
-                    
-                    // 如果有日期信息，使用完整的时间戳
-                    if (has_date_) {
-                        LOG_DEBUG("GNSS: Using date information - Year: %d, Month: %d, Day: %d", 
-                                 year_, month_, day_);
-                        
-                        tm_time.tm_year = year_ - 1900;
-                        tm_time.tm_mon = month_ - 1;
-                        tm_time.tm_mday = day_;
-                    } else {
-                        // 如果没有日期信息，使用当前系统日期
-                        int current_year = tm_now.tm_year + 1900;
-                        int current_month = tm_now.tm_mon + 1;
-                        int current_day = tm_now.tm_mday;
-                        
-                        tm_time.tm_year = current_year - 1900;
-                        tm_time.tm_mon = current_month - 1;
-                        tm_time.tm_mday = current_day;
-                        LOG_DEBUG("GNSS: Using current system date - Year: %d, Month: %d, Day: %d", 
-                                 current_year, current_month, current_day);
-                    }
-                    
-                    // 设置时间
-                    tm_time.tm_hour = hour;
-                    tm_time.tm_min = minute;
-                    tm_time.tm_sec = static_cast<int>(second);
-                    tm_time.tm_isdst = -1; // 自动判断夏令时
-                    
-                    // 转换为时间戳
-                    // 注意：GNSS时间是UTC时间，需要转换为本地时间
-                    // 先将UTC时间转换为时间戳，然后调整为本地时间
-                    // 步骤1：将UTC时间转换为UTC时间戳
-                    time_t utc_timestamp = mktime(&tm_time);
-                    
-                    // 步骤2：获取本地时间和UTC时间的差值
-                    time_t local_now = time(nullptr);
-                    struct tm tm_local;
-                    localtime_s(&tm_local, &local_now);
-                    time_t local_timestamp = mktime(&tm_local);
-                    
-                    struct tm tm_utc;
-                    gmtime_s(&tm_utc, &local_now);
-                    time_t utc_now = mktime(&tm_utc);
-                    
-                    int timezone_offset = static_cast<int>(difftime(local_timestamp, utc_now));
-                    
-                    // 步骤3：调整为本地时间戳
-                    timestamp = utc_timestamp + timezone_offset;
-                    
-                    // 添加毫秒部分
-                    double fractional_seconds = second - static_cast<int>(second);
-                    double full_timestamp = static_cast<double>(timestamp) + fractional_seconds;
-                    
-                    // 转换为标准时间格式
-                    // 注意：这里直接使用时间戳，不进行格式转换以避免依赖问题
-                    LOG_INFO("GNSS: Full timestamp (local time): %.3f", full_timestamp);
-                    
-                    // 使用GNSS时间更新时间同步模块
-                    // 注意：GNSS数据中的时间是UTC时间，需要转换为与本地时间相同的基准
-                    // 这里我们直接使用计算出的本地时间戳作为GNSS时间，因为我们已经调整了时区
-                    TIME_SYNC.updateGNSS(full_timestamp);
-                    
-                    // 获取同步后的时间戳
-                    gnss_.time = TIME_SYNC.getSyncedTime();
-                    LOG_INFO("GNSS: Synced timestamp: %.3f", gnss_.time);
-                } else {
-                    LOG_WARN("GNSS: Invalid time values - Hour: %d, Minute: %d, Second: %.3f", 
-                             hour, minute, second);
-                    gnss_.time = 0;
-                }
-            } else {
-                LOG_WARN("GNSS: Invalid time string: '%s'", time_str.c_str());
-                gnss_.time = 0;
-            }
-            
-            // 解析纬度（度分格式转换为十进制）
-            std::string lat_str = fields[2];
-            std::string lat_dir = fields[3];
-            gnss_.blh[0] = convert_dm_to_dec(lat_str, lat_dir);
-            
-            // 解析经度（度分格式转换为十进制）
-            std::string lon_str = fields[4];
-            std::string lon_dir = fields[5];
-            gnss_.blh[1] = convert_dm_to_dec(lon_str, lon_dir);
-            
-            // 解析高度
-            gnss_.blh[2] = safe_stod(fields[9]);
-            
-            // 解析定位质量
-            int quality = safe_stoi(fields[6]);
-            gnss_.isvalid = (quality >= 1);
-            gnss_.quality = quality;
-            
-            // 从GGA消息中获取使用卫星数
-            int used_sv = 0;
-            if (fields.size() > 7) {
-                used_sv = safe_stoi(fields[7]);
-            }
-            gnss_.used_sv = used_sv; // 这里是使用卫星数
-            
-            // 根据DOP计算标准差，使用用户等效测距误差(UERE)
-            // 核心公式：位置标准差(σ) = 用户等效测距误差(UERE) × 对应的DOP值
-            
-            // 用户等效测距误差(UERE)设置
-            // 普通单频GNSS接收机：UERE = 3.0米
-            // 高精度RTK/差分接收机：UERE = 0.01-0.05米
-            double uere = 3.0; // 使用普通GNSS接收机的典型值
-            
-            // 获取从GNGSA消息中解析的最新DOP值
-            double hdop = gnss_.hdop > 0 ? gnss_.hdop : 1.0; // 默认值为1.0
-            double vdop = gnss_.vdop > 0 ? gnss_.vdop : 1.0; // 默认值为1.0
-            double pdop = gnss_.pdop > 0 ? gnss_.pdop : 1.0; // 默认值为1.0
-            
-            // 计算水平位置标准差
-            double sigma_h = uere * hdop;
-            
-            // 计算纬度和经度标准差
-            // 假设经纬度方向误差独立且相等
-            double sigma_lat = sigma_h / sqrt(2.0);
-            double sigma_lon = sigma_h / sqrt(2.0);
-            
-            // 计算高程标准差
-            double sigma_alt = uere * vdop;
-            
-            // 限制标准差范围，避免异常值
-            if (sigma_lat < 0.01) sigma_lat = 0.01;
-            if (sigma_lat > 100.0) sigma_lat = 100.0;
-            if (sigma_lon < 0.01) sigma_lon = 0.01;
-            if (sigma_lon > 100.0) sigma_lon = 100.0;
-            if (sigma_alt < 0.01) sigma_alt = 0.01;
-            if (sigma_alt > 100.0) sigma_alt = 100.0;
-            
-            // 优先使用从GST消息中解析的标准差数据（如果有）
-            if (gnss_.sigma_lat_gst > 0) {
-                gnss_.std[0] = gnss_.sigma_lat_gst;  // 纬度标准差
-            } else {
-                gnss_.std[0] = sigma_lat;  // 纬度标准差
-            }
-            
-            if (gnss_.sigma_lon_gst > 0) {
-                gnss_.std[1] = gnss_.sigma_lon_gst;  // 经度标准差
-            } else {
-                gnss_.std[1] = sigma_lon;  // 经度标准差
-            }
-            
-            if (gnss_.sigma_alt_gst > 0) {
-                gnss_.std[2] = gnss_.sigma_alt_gst;  // 高度标准差
-            } else {
-                gnss_.std[2] = sigma_alt;  // 高度标准差
-            }
-            
-            LOG_DEBUG("GNSS: HDOP=%.2f, VDOP=%.2f, PDOP=%.2f", hdop, vdop, pdop);
-            LOG_DEBUG("GNSS: Calculated std - lat: %.3f, lon: %.3f, alt: %.3f", sigma_lat, sigma_lon, sigma_alt);
-            
-            // 注意：GGA消息不包含速度信息，速度信息需要从RMC消息中获取
-            // 因此这里不设置速度值，保持为0，等待RMC消息更新
-            
-            return true;
+            return false;
         }
     }
-    
-    // 检查是否是RMC消息（包含速度信息，支持GPRMC和GNRMC）
-    if (nmea.substr(0, 6) == "$GPRMC" || nmea.substr(0, 6) == "$GNRMC") {
-        std::vector<std::string> fields = split(nmea, ',');
-        if (fields.size() >= 8) {
-            // 解析时间（HHMMSS.SSS）
-            std::string time_str = fields[1];
-            if (!time_str.empty() && time_str.length() >= 6) {
-                // 解析时分秒，处理边界情况
-                int hour = 0, minute = 0;
-                double second = 0.0;
-                
-                // 安全解析小时
-                if (time_str.length() >= 2) {
-                    hour = safe_stoi(time_str.substr(0, 2));
-                }
-                
-                // 安全解析分钟
-                if (time_str.length() >= 4) {
-                    minute = safe_stoi(time_str.substr(2, 2));
-                }
-                
-                // 安全解析秒
-                if (time_str.length() >= 6) {
-                    second = safe_stod(time_str.substr(4));
-                }
-                
-                // 验证时间有效性
-                if (hour >= 0 && hour < 24 && minute >= 0 && minute < 60 && second >= 0 && second < 60) {
-                    // 计算完整的时间戳，与IMU使用相同的时间系统（从1970年开始的秒数）
-                    time_t timestamp = 0;
-                    struct tm tm_time = {0};
-                    
-                    // 获取当前系统时间作为日期参考
-                    time_t now = time(nullptr);
-                    struct tm tm_now;
-                    localtime_s(&tm_now, &now);
-                    
-                    // 如果有日期信息，使用完整的时间戳
-                    if (has_date_) {
-                        tm_time.tm_year = year_ - 1900;
-                        tm_time.tm_mon = month_ - 1;
-                        tm_time.tm_mday = day_;
-                    } else {
-                        // 如果没有日期信息，使用当前系统日期
-                        int current_year = tm_now.tm_year + 1900;
-                        int current_month = tm_now.tm_mon + 1;
-                        int current_day = tm_now.tm_mday;
-                        
-                        tm_time.tm_year = current_year - 1900;
-                        tm_time.tm_mon = current_month - 1;
-                        tm_time.tm_mday = current_day;
-                    }
-                    
-                    // 设置时间
-                    tm_time.tm_hour = hour;
-                    tm_time.tm_min = minute;
-                    tm_time.tm_sec = static_cast<int>(second);
-                    tm_time.tm_isdst = -1; // 自动判断夏令时
-                    
-                    // 转换为时间戳
-                    // 注意：GNSS时间是UTC时间，需要转换为本地时间
-                    time_t utc_timestamp = mktime(&tm_time);
-                    
-                    // 获取本地时间和UTC时间的差值
-                    time_t local_now = time(nullptr);
-                    struct tm tm_local;
-                    localtime_s(&tm_local, &local_now);
-                    time_t local_timestamp = mktime(&tm_local);
-                    
-                    struct tm tm_utc;
-                    gmtime_s(&tm_utc, &local_now);
-                    time_t utc_now = mktime(&tm_utc);
-                    
-                    int timezone_offset = static_cast<int>(difftime(local_timestamp, utc_now));
-                    
-                    // 调整为本地时间戳
-                    timestamp = utc_timestamp + timezone_offset;
-                    
-                    // 添加毫秒部分
-                    double fractional_seconds = second - static_cast<int>(second);
-                    double full_timestamp = static_cast<double>(timestamp) + fractional_seconds;
-                    
-                    // 解析速度（ knots 转换为 m/s）
-                    double speed_knots = safe_stod(fields[7]);
-                    double speed_mps = speed_knots * 0.514444; // 1 knot = 0.514444 m/s
-                    
-                    // 解析航向角（度）
-                    double course_deg = 0.0;
-                    if (fields.size() > 8 && !fields[8].empty()) {
-                        course_deg = safe_stod(fields[8]);
-                    }
-                    
-                    // 将速度从极坐标转换为直角坐标系（北向、东向、地向）
-                    // 注意：航向角是从北开始顺时针计算的
-                    double course_rad = course_deg * M_PI / 180.0;
-                    
-                    // 北向速度
-                    gnss_.vel[0] = speed_mps * cos(course_rad);
-                    // 东向速度
-                    gnss_.vel[1] = speed_mps * sin(course_rad);
-                    // 地向速度（RMC消息不包含垂直速度，设为0）
-                    gnss_.vel[2] = 0.0;
-                    
-                    LOG_INFO("GNSS: Got velocity from RMC - Speed: %.3f m/s, Course: %.1f deg", 
-                             speed_mps, course_deg);
-                    LOG_INFO("GNSS: Velocity components (N,E,D): %.3f, %.3f, %.3f m/s", 
-                             gnss_.vel[0], gnss_.vel[1], gnss_.vel[2]);
-                    
-                    // 使用GNSS时间更新时间同步模块
-                    TIME_SYNC.updateGNSS(full_timestamp);
-                    
-                    // 获取同步后的时间戳
-                    gnss_.time = TIME_SYNC.getSyncedTime();
-                    LOG_INFO("GNSS: Synced timestamp from RMC: %.3f", gnss_.time);
-                    
-                    // 保持isvalid状态不变，由GGA消息的定位质量决定
-                }
-            }
-            
-            // 注意：RMC消息也包含位置信息，但我们优先使用GGA消息的位置信息
-            // 因此这里不更新位置值，只更新速度值
-            
-            return false; // 不返回true，因为我们希望继续处理GGA消息获取位置信息
-        }
-    }
-    
+
+    // 忽略其他消息类型（GLL, DHV等），减少不必要的解析
     return false;
 }
 
 std::vector<std::string> GnssSerialLoader::split(const std::string& str, char delimiter) {
     std::vector<std::string> tokens;
-    std::string token;
-    for (char c : str) {
-        if (c == delimiter) {
-            tokens.push_back(token);
-            token.clear();
-        } else {
-            token += c;
-        }
+    tokens.reserve(20); // 预分配空间，NMEA消息通常有10-20个字段
+
+    size_t start = 0;
+    size_t end = str.find(delimiter);
+
+    while (end != std::string::npos) {
+        tokens.emplace_back(str.substr(start, end - start));
+        start = end + 1;
+        end = str.find(delimiter, start);
     }
-    tokens.push_back(token);
+
+    tokens.emplace_back(str.substr(start));
     return tokens;
 }
 

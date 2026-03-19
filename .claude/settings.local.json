@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(cmake:*)",
+      "Bash(git -C \"/d/GPS-Seeder/gps_rover/.claude/worktrees/agent-a4e1434f\" ls-files)"
+    ]
+  }
+}

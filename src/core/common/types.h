@@ -35,9 +35,15 @@ using Eigen::Quaterniond;
 using Eigen::Vector3d;
 
 typedef struct GNSS {
-    double time;
+    double timestamp; // 系统时间戳
+    double time; // 本地时间（经过时区转换后的时间戳）
+    double UtcTime; // UTC时间（从GGA消息中解析的时间戳）
+    double dt; // 时间同步的dt值
+    std::string UtcDate; // UTC日期（从GGA消息中解析的日期，格式：YYYY-MM-DD）
 
     Vector3d blh;
+    Vector3d min;
+    Vector3d sec;
     Vector3d vel;
     Vector3d std;
 
@@ -66,14 +72,22 @@ typedef struct GNSS {
     double sigma_lon_gst; // 经度标准差（米）
     double sigma_alt_gst; // 高度标准差（米）
     double sigma_range; // 伪距标准差（米）
+    double pr_rms; // PrRMS值
 } GNSS;
 
 typedef struct IMU {
-    double time;
-    double dt;
+    double timestamp; // 系统时间戳
+    double time; // IMU模块的片上时间
+
+    double gpstime; // GPS获取的卫星时间转换得到的精确时间
+    bool synced; // 是否同步到GNSS时间
+    double dt; // 片上时间与GPS时间的差值
 
     Vector3d dtheta;
     Vector3d dvel;
+    Vector3d angle; // 角度 [rad]
+    Vector3d acceleration; // 加速度 [m/s^2]
+    Vector3d angular_velocity; // 角速度 [rad/s]
 
     double odovel;
     

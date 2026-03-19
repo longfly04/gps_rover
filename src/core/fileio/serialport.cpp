@@ -22,183 +22,170 @@
 
 #include "serialport.h"
 
-#ifdef _WIN32
-#include <windows.h>
-#else
-#include <termios.h>
-#include <unistd.h>
-#include <fcntl.h>
-#include <sys/ioctl.h>
-#endif
+#include <QDebug>
+#include <functional>
+
+SerialPort::SerialPort()
+    : serial_port_(nullptr), is_open_(false), watchdog_timer_(nullptr) {
+}
 
 SerialPort::~SerialPort() {
+    stopWatchdog();
     close();
 }
 
 bool SerialPort::open(const std::string& port, int baudrate) {
-#ifdef _WIN32
-    // Windows 串口打开
-    hCom_ = CreateFileA(port.c_str(), GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
-    if (hCom_ == INVALID_HANDLE_VALUE) {
+    if (is_open_) {
+        close();
+    }
+
+    serial_port_ = new QSerialPort();
+
+    // 处理端口名称
+    std::string processedPort = port;
+    
+    // 移除可能的后缀，如"s"
+    if (processedPort.find("COM") == 0) {
+        // 提取COM后面的数字部分
+        std::string portNumber = processedPort.substr(3);
+        // 只保留数字
+        portNumber.erase(std::remove_if(portNumber.begin(), portNumber.end(), [](char c) { return !std::isdigit(c); }), portNumber.end());
+        if (!portNumber.empty()) {
+            // 重新构建端口名称
+            processedPort = "COM" + portNumber;
+        }
+    }
+
+    serial_port_->setPortName(QString::fromStdString(processedPort));
+
+    serial_port_->setBaudRate(baudrate);
+
+    serial_port_->setDataBits(QSerialPort::Data8);
+    serial_port_->setParity(QSerialPort::NoParity);
+    serial_port_->setStopBits(QSerialPort::OneStop);
+    serial_port_->setFlowControl(QSerialPort::NoFlowControl);
+    
+    // 【关键优化】设置读取缓冲区大小
+    // 设置为 8KB，避免过大导致数据积压
+    serial_port_->setReadBufferSize(8 * 1024);
+
+    // 打开串口，使用默认的缓冲模式
+    if (serial_port_->open(QIODevice::ReadWrite)) {
+        is_open_ = true;
+        qDebug() << "SerialPort:" << processedPort << "opened successfully with baudrate" << baudrate;
+        return true;
+    } else {
+        qDebug() << "SerialPort: Failed to open" << processedPort
+                 << "Error:" << serial_port_->errorString();
+        delete serial_port_;
+        serial_port_ = nullptr;
+        is_open_ = false;
         return false;
     }
-
-    // 配置串口
-    DCB dcb;
-    if (!GetCommState((HANDLE)hCom_, &dcb)) {
-        CloseHandle((HANDLE)hCom_);
-        hCom_ = nullptr;
-        return false;
-    }
-
-    dcb.BaudRate = baudrate;
-    dcb.ByteSize = 8;
-    dcb.Parity = NOPARITY;
-    dcb.StopBits = ONESTOPBIT;
-    dcb.fBinary = TRUE;
-    dcb.fParity = FALSE;
-    dcb.fOutxCtsFlow = FALSE;
-    dcb.fOutxDsrFlow = FALSE;
-    dcb.fDtrControl = DTR_CONTROL_DISABLE;
-    dcb.fDsrSensitivity = FALSE;
-    dcb.fTXContinueOnXoff = TRUE;
-    dcb.fOutX = FALSE;
-    dcb.fInX = FALSE;
-    dcb.fErrorChar = FALSE;
-    dcb.fNull = FALSE;
-    dcb.fRtsControl = RTS_CONTROL_DISABLE;
-    dcb.fAbortOnError = FALSE;
-
-    if (!SetCommState((HANDLE)hCom_, &dcb)) {
-        CloseHandle((HANDLE)hCom_);
-        hCom_ = nullptr;
-        return false;
-    }
-
-    // 设置超时
-    COMMTIMEOUTS timeouts;
-    timeouts.ReadIntervalTimeout = MAXDWORD;
-    timeouts.ReadTotalTimeoutMultiplier = 0;
-    timeouts.ReadTotalTimeoutConstant = 100;
-    timeouts.WriteTotalTimeoutMultiplier = 0;
-    timeouts.WriteTotalTimeoutConstant = 0;
-
-    if (!SetCommTimeouts((HANDLE)hCom_, &timeouts)) {
-        CloseHandle((HANDLE)hCom_);
-        hCom_ = nullptr;
-        return false;
-    }
-
-    // 清空缓冲区
-    PurgeComm((HANDLE)hCom_, PURGE_TXCLEAR | PURGE_RXCLEAR);
-
-    is_open_ = true;
-    return true;
-#else
-    // Linux 串口打开
-    hCom_ = (void*)open(port.c_str(), O_RDWR | O_NOCTTY | O_NDELAY);
-    if (hCom_ == (void*)-1) {
-        return false;
-    }
-
-    // 配置串口
-    struct termios options;
-    tcgetattr((int)hCom_, &options);
-
-    // 设置波特率
-    speed_t speed;
-    switch (baudrate) {
-        case 9600:
-            speed = B9600;
-            break;
-        case 19200:
-            speed = B19200;
-            break;
-        case 38400:
-            speed = B38400;
-            break;
-        case 57600:
-            speed = B57600;
-            break;
-        case 115200:
-            speed = B115200;
-            break;
-        default:
-            speed = B9600;
-            break;
-    }
-
-    cfsetispeed(&options, speed);
-    cfsetospeed(&options, speed);
-
-    options.c_cflag |= (CLOCAL | CREAD);
-    options.c_cflag &= ~CSIZE;
-    options.c_cflag |= CS8;
-    options.c_cflag &= ~PARENB;
-    options.c_cflag &= ~CSTOPB;
-    options.c_cflag &= ~CRTSCTS;
-
-    options.c_lflag &= ~(ICANON | ECHO | ECHOE | ISIG);
-    options.c_oflag &= ~OPOST;
-
-    options.c_cc[VMIN] = 0;
-    options.c_cc[VTIME] = 1;
-
-    if (tcsetattr((int)hCom_, TCSANOW, &options) != 0) {
-        close((int)hCom_);
-        hCom_ = nullptr;
-        return false;
-    }
-
-    is_open_ = true;
-    return true;
-#endif
 }
 
 void SerialPort::close() {
-    if (is_open_) {
-#ifdef _WIN32
-        CloseHandle((HANDLE)hCom_);
-#else
-        close((int)hCom_);
-#endif
-        hCom_ = nullptr;
-        is_open_ = false;
+    if (serial_port_ != nullptr) {
+        if (serial_port_->isOpen()) {
+            serial_port_->close();
+        }
+        delete serial_port_;
+        serial_port_ = nullptr;
     }
+    is_open_ = false;
 }
 
 bool SerialPort::isOpen() const {
-    return is_open_;
+    return is_open_ && serial_port_ != nullptr && serial_port_->isOpen();
 }
 
 int SerialPort::read(char* buffer, int size) {
-    if (!is_open_) {
+    if (!isOpen()) {
         return -1;
     }
 
-#ifdef _WIN32
-    DWORD bytes_read;
-    if (!ReadFile((HANDLE)hCom_, buffer, size, &bytes_read, NULL)) {
+    // ✅ 优化：使用 waitForReadyRead 避免空转，但设置很短的超时
+    // 如果没有数据，最多等待1ms，避免CPU空转
+    if (serial_port_->bytesAvailable() == 0) {
+        if (!serial_port_->waitForReadyRead(1)) {
+            return 0; // 超时或没有数据
+        }
+    }
+
+    // 读取可用数据（不超过缓冲区大小）
+    qint64 available = serial_port_->bytesAvailable();
+    if (available == 0) {
+        return 0;
+    }
+
+    qint64 bytes_to_read = qMin(static_cast<qint64>(size), available);
+    qint64 bytes_read = serial_port_->read(buffer, bytes_to_read);
+
+    if (bytes_read < 0) {
+        qDebug() << "SerialPort: Read error" << serial_port_->errorString();
         return -1;
     }
-    return bytes_read;
-#else
-    return read((int)hCom_, buffer, size);
-#endif
+
+    return static_cast<int>(bytes_read);
 }
 
 int SerialPort::write(const char* buffer, int size) {
-    if (!is_open_) {
+    if (!isOpen()) {
         return -1;
     }
 
-#ifdef _WIN32
-    DWORD bytes_written;
-    if (!WriteFile((HANDLE)hCom_, buffer, size, &bytes_written, NULL)) {
+    qint64 bytes_written = serial_port_->write(buffer, size);
+    if (bytes_written < 0) {
+        qDebug() << "SerialPort: Write error" << serial_port_->errorString();
         return -1;
     }
-    return bytes_written;
-#else
-    return write((int)hCom_, buffer, size);
-#endif
+
+    // 等待数据写入完成
+    if (!serial_port_->waitForBytesWritten(1000)) {
+        qDebug() << "SerialPort: Write timeout";
+        return -1;
+    }
+
+    return static_cast<int>(bytes_written);
+}
+
+qint64 SerialPort::bytesAvailable() const {
+    if (!isOpen()) {
+        return 0;
+    }
+    return serial_port_->bytesAvailable();
+}
+
+void SerialPort::clearBuffer() {
+    if (!isOpen()) {
+        return;
+    }
+    // 清空接收缓冲区中的所有数据
+    serial_port_->clear(QSerialPort::Input);
+}
+
+void SerialPort::startWatchdog(int interval, std::function<void()> callback) {
+    stopWatchdog(); // 先停止之前的定时器
+    
+    watchdog_callback_ = callback;
+    watchdog_timer_ = new QTimer();
+    
+    QObject::connect(watchdog_timer_, &QTimer::timeout, [this]() {
+        if (watchdog_callback_) {
+            watchdog_callback_();
+        }
+    });
+    
+    watchdog_timer_->start(interval);
+    qDebug() << "SerialPort: Watchdog timer started with interval" << interval << "ms";
+}
+
+void SerialPort::stopWatchdog() {
+    if (watchdog_timer_) {
+        watchdog_timer_->stop();
+        delete watchdog_timer_;
+        watchdog_timer_ = nullptr;
+        watchdog_callback_ = nullptr;
+        qDebug() << "SerialPort: Watchdog timer stopped";
+    }
 }

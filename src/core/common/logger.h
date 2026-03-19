@@ -29,17 +29,15 @@
 #include <fstream>
 #include <chrono>
 #include <sstream>
-
-// 前向声明LoggerSignalEmitter类
-class LoggerSignalEmitter;
+#include <cctype>
 
 class Logger {
 public:
-    enum LogLevel {
+    enum class LogLevel {
         DEBUG = 0,
         INFO,
         WARN,
-        ERROR,
+        Error,
         FATAL
     };
 
@@ -63,8 +61,6 @@ public:
     void setLogFile(const std::string& filename) {
         // 先关闭之前可能打开的日志文件
         if (log_file_.is_open()) {
-            // 关闭前先刷新缓冲区
-            flushBuffer();
             log_file_.close();
         }
         
@@ -76,9 +72,9 @@ public:
             std::string time_str = getCurrentTime();
             std::string log_entry = "[" + time_str + "] [INFO] Logger: Log file opened: " + filename + "\n";
             
-            // 直接写入文件，不经过缓冲区
+            // 直接写入文件
             log_file_ << log_entry;
-            log_file_.flush(); // 立即刷新缓冲区
+            log_file_.flush(); // 立即刷新，确保数据写入磁盘
             
             // 调用日志消息处理器
             if (logMessageHandler_) {
@@ -91,41 +87,37 @@ public:
 
     void closeLogFile() {
         if (log_file_.is_open()) {
-            // 关闭前先刷新缓冲区
-            flushBuffer();
             log_file_.close();
         }
     }
 
     template<typename... Args>
     void debug(const char* function, const char* format, Args&&... args) {
-        log(DEBUG, function, format, std::forward<Args>(args)...);
+        log(LogLevel::DEBUG, function, format, std::forward<Args>(args)...);
     }
 
     template<typename... Args>
     void info(const char* function, const char* format, Args&&... args) {
-        log(INFO, function, format, std::forward<Args>(args)...);
+        log(LogLevel::INFO, function, format, std::forward<Args>(args)...);
     }
 
     template<typename... Args>
     void warn(const char* function, const char* format, Args&&... args) {
-        log(WARN, function, format, std::forward<Args>(args)...);
+        log(LogLevel::WARN, function, format, std::forward<Args>(args)...);
     }
 
     template<typename... Args>
     void error(const char* function, const char* format, Args&&... args) {
-        log(ERROR, function, format, std::forward<Args>(args)...);
+        log(LogLevel::Error, function, format, std::forward<Args>(args)...);
     }
 
     template<typename... Args>
     void fatal(const char* function, const char* format, Args&&... args) {
-        log(FATAL, function, format, std::forward<Args>(args)...);
+        log(LogLevel::FATAL, function, format, std::forward<Args>(args)...);
     }
 
 private:
-    static const size_t BUFFER_SIZE = 1024 * 10; // 10KB缓冲区
-    
-    Logger() : level_(INFO), buffer_size_(0), logMessageHandler_(nullptr) {
+    Logger() : level_(LogLevel::INFO), logMessageHandler_(nullptr) {
         // 初始化日志系统
     }
 
@@ -139,7 +131,13 @@ private:
     std::string getCurrentTime() {
         std::time_t now = std::time(nullptr);
         std::tm tm_now;
+        
+#ifdef _WIN32
         localtime_s(&tm_now, &now);
+#else
+        // 非Windows平台使用localtime，注意线程安全问题
+        localtime_r(&now, &tm_now);
+#endif
         
         // 获取毫秒部分
         auto now_ms = std::chrono::system_clock::now();
@@ -149,38 +147,25 @@ private:
         // 格式化时间，包含毫秒，格式为：YYYY-MM-DD HH:MM:SS:SSS
         std::strftime(buffer, sizeof(buffer), "%Y-%m-%d %H:%M:%S", &tm_now);
         char buffer_with_ms[30];
-        std::sprintf(buffer_with_ms, "%s:%03d", buffer, static_cast<int>(ms.count()));
+        std::snprintf(buffer_with_ms, sizeof(buffer_with_ms), "%s:%03d", buffer, static_cast<int>(ms.count()));
         
         return std::string(buffer_with_ms);
     }
 
     std::string levelToString(LogLevel level) {
         switch (level) {
-            case DEBUG:
+            case LogLevel::DEBUG:
                 return "DEBUG";
-            case INFO:
+            case LogLevel::INFO:
                 return "INFO";
-            case WARN:
+            case LogLevel::WARN:
                 return "WARN";
-            case ERROR:
-                return "ERROR";
-            case FATAL:
+            case LogLevel::Error:
+                return "Error";
+            case LogLevel::FATAL:
                 return "FATAL";
             default:
                 return "UNKNOWN";
-        }
-    }
-
-    void flushBuffer() {
-        if (log_file_.is_open() && buffer_size_ > 0) {
-            // 将缓冲区内容写入文件
-            log_file_ << buffer_.str();
-            log_file_.flush(); // 立即刷新缓冲区
-            
-            // 清空缓冲区
-            buffer_.str("");
-            buffer_.clear();
-            buffer_size_ = 0;
         }
     }
 
@@ -193,24 +178,20 @@ private:
         std::string time_str = getCurrentTime();
         std::string level_str = levelToString(level);
 
-        // 构建日志消息
-        char buffer[1024];
-        std::snprintf(buffer, sizeof(buffer), format, std::forward<Args>(args)...);
-        std::string message(buffer);
+        // 构建日志消息，使用动态缓冲区避免溢出
+        std::stringstream message_stream;
+        // 使用可变参数模板构建消息
+        formatMessage(message_stream, format, std::forward<Args>(args)...);
+        std::string message = message_stream.str();
 
         // 构建完整的日志条目
         std::string log_entry = "[" + time_str + "] [" + level_str + "] [" + function + "] " + message + "\n";
 
         // 只输出到文件，不输出到控制台，即使日志文件未打开也不输出
         if (log_file_.is_open()) {
-            // 将日志条目添加到缓冲区
-            buffer_ << log_entry;
-            buffer_size_ += log_entry.size();
-            
-            // 检查缓冲区大小，如果超过阈值就刷新
-            if (buffer_size_ >= BUFFER_SIZE) {
-                flushBuffer();
-            }
+            // 直接写入文件，不使用缓冲区
+            log_file_ << log_entry;
+            log_file_.flush(); // 立即刷新，确保数据写入磁盘
         }
 
         // 调用日志消息处理器，实时显示日志
@@ -219,10 +200,30 @@ private:
         }
     }
 
+    // 辅助函数：格式化消息
+    template<typename T, typename... Args>
+    void formatMessage(std::stringstream& stream, const char* format, T&& arg, Args&&... args) {
+        while (*format && *format != '%') {
+            stream << *format++;
+        }
+        if (*format == '%') {
+            format++;
+            // 跳过格式化标记的其余部分（如s、d等）
+            while (*format && (isalpha(*format) || isdigit(*format) || *format == '.' || *format == '-')) {
+                format++;
+            }
+            stream << std::forward<T>(arg);
+            formatMessage(stream, format, std::forward<Args>(args)...);
+        }
+    }
+
+    // 终止递归的辅助函数
+    void formatMessage(std::stringstream& stream, const char* format) {
+        stream << format;
+    }
+
     LogLevel level_;
     std::ofstream log_file_;
-    std::stringstream buffer_; // 日志缓冲区
-    size_t buffer_size_; // 缓冲区当前大小
     LogMessageHandler logMessageHandler_; // 日志消息处理器
 };
 
@@ -230,7 +231,7 @@ private:
 #define LOG_DEBUG(format, ...) Logger::getInstance().debug(__FUNCTION__, format, ##__VA_ARGS__)
 #define LOG_INFO(format, ...) Logger::getInstance().info(__FUNCTION__, format, ##__VA_ARGS__)
 #define LOG_WARN(format, ...) Logger::getInstance().warn(__FUNCTION__, format, ##__VA_ARGS__)
-#define LOG_ERROR(format, ...) Logger::getInstance().error(__FUNCTION__, format, ##__VA_ARGS__)
+#define LOG_Error(format, ...) Logger::getInstance().error(__FUNCTION__, format, ##__VA_ARGS__)
 #define LOG_FATAL(format, ...) Logger::getInstance().fatal(__FUNCTION__, format, ##__VA_ARGS__)
 
 #endif // LOGGER_H

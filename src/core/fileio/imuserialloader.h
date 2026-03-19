@@ -42,6 +42,10 @@ public:
 
     bool isOpen() const;
 
+    qint64 bytesAvailable() const;
+
+    void clearBuffer();
+
 private:
     // IMU数据缓存结构体
     struct IMUDataCache {
@@ -106,9 +110,6 @@ private:
     
     // 重置状态
     void resetState();
-    
-    // 清理缓冲区
-    void clearBuffer();
 };
 
 #endif // IMUSERIALLOADER_H

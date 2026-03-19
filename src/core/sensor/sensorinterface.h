@@ -4,202 +4,363 @@
 #include <QObject>
 #include <QThread>
 #include <QSerialPortInfo>
-// 包含KF-GINS的头文件
+#include <QTimer>
+#include <QElapsedTimer>
+#include <vector>
+// 包含 KF-GINS 的头文件
 #include "../common/types.h"
 #include "../fileio/imuserialloader.h"
 #include "../fileio/gnssserialloader.h"
 
-/**
- * @brief 传感器接口类，负责与后端传感器通信和数据获取
- */
-class SensorInterface : public QObject
+// 传感器基类
+class SensorBase : public QObject
 {
     Q_OBJECT
+
+protected:
+    QString port_;
+    int baudrate_;
+    bool connected_;
+    bool running_;
+    QThread *thread_;
+    QTimer *watchdogTimer_; // 看门狗定时器，防止信号丢失
+    
+    // 时间同步相关变量
+    double timeSyncDt_; // 时间同步的 dt 值
+    bool timeSynced_; // 时间是否已同步
 
 public:
     /**
      * @brief 构造函数
      * @param parent 父对象指针
      */
-    explicit SensorInterface(QObject *parent = nullptr);
-    
+    explicit SensorBase(QObject *parent = nullptr);
+
     /**
      * @brief 析构函数
      */
-    ~SensorInterface();
-    
-    
+    ~SensorBase();
+
     /**
-     * @brief 启动IMU数据采集
-     * @return 是否启动成功
+     * @brief 设置串口参数
+     * @param port 串口端口
+     * @param baudrate 波特率
      */
-    bool startIMU();
-    
+    void setSerialParams(const QString &port, int baudrate);
+
     /**
-     * @brief 停止IMU数据采集
-     */
-    void stopIMU();
-    
-    /**
-     * @brief 启动GPS数据采集
-     * @return 是否启动成功
-     */
-    bool startGPS();
-    
-    /**
-     * @brief 停止GPS数据采集
-     */
-    void stopGPS();
-    
-    
-    /**
-     * @brief 连接IMU模块
+     * @brief 连接传感器
      * @return 是否连接成功
      */
-    bool connectIMU();
-    
-    /**
-     * @brief 断开IMU模块连接
-     */
-    void disconnectIMU();
-    
-    /**
-     * @brief 连接GPS模块
-     * @return 是否连接成功
-     */
-    bool connectGPS();
-    
-    /**
-     * @brief 断开GPS模块连接
-     */
-    void disconnectGPS();
+    virtual bool connect() = 0;
 
     /**
-     * @brief 获取IMU原始数据
-     * @return IMU原始数据
+     * @brief 断开传感器连接
      */
-    QString getRawImuData() const;
+    virtual void disconnect() = 0;
 
     /**
-     * @brief 获取GNSS原始数据
-     * @return GNSS原始数据
+     * @brief 启动传感器数据采集
+     * @return 是否启动成功
      */
-    QString getRawGnssData() const;
+    virtual bool start() = 0;
 
     /**
-     * @brief 设置IMU串口参数
-     * @param imuPort IMU串口端口
-     * @param imuBaudrate IMU串口波特率
+     * @brief 停止传感器数据采集
      */
-    void setImuSerialParams(const QString &imuPort, int imuBaudrate);
-
-    /**
-     * @brief 设置GPS串口参数
-     * @param gnssPort GNSS串口端口
-     * @param gnssBaudrate GNSS串口波特率
-     */
-    void setGpsSerialParams(const QString &gnssPort, int gnssBaudrate);
-
-
+    virtual void stop() = 0;
     
     /**
-     * @brief 获取IMU加载器指针
-     * @return IMU加载器指针
+     * @brief 启动传感器线程
+     * @return 是否启动成功
      */
-    ImuSerialLoader* getImuLoader() const;
+    bool startThread();
     
     /**
-     * @brief 获取GNSS加载器指针
-     * @return GNSS加载器指针
+     * @brief 停止传感器线程
      */
-    GnssSerialLoader* getGnssLoader() const;
+    void stopThread();
     
     /**
-     * @brief 检查IMU是否连接
-     * @return IMU是否连接
+     * @brief 传感器时钟方法，用于记录传感器上的时间
+     * @return 传感器上的时间戳
      */
-    bool isImuConnected() const;
-    
-    /**
-     * @brief 检查GNSS是否连接
-     * @return GNSS是否连接
-     */
-    bool isGnssConnected() const;
+    virtual double clock();
 
+    /**
+     * @brief 获取最新传感器数据
+     * @return 数据指针
+     */
+    virtual void* getLatestData() const = 0;
+
+    /**
+     * @brief 检查是否连接
+     * @return 是否连接
+     */
+    bool isConnected() const;
+
+    /**
+     * @brief 检查是否运行
+     * @return 是否运行
+     */
+    bool isRunning() const;
+
+    /**
+     * @brief 获取串口端口
+     * @return 串口端口
+     */
+    QString getPort() const;
+
+    /**
+     * @brief 获取波特率
+     * @return 波特率
+     */
+    int getBaudrate() const;
+    
     /**
      * @brief 获取系统中所有可用的串口列表
      * @return 可用串口列表
      */
     static QList<QSerialPortInfo> getAvailableSerialPorts();
+    
+    /**
+     * @brief 时间同步方法，为所有传感器同步时间
+     * @param systemTimestamp 系统时间戳
+     * @param utcTime UTC时间
+     * @return 是否同步成功
+     */
+    virtual bool syncTime(double systemTimestamp, double utcTime);
+    
+    /**
+     * @brief 设置时间同步的dt值
+     * @param dt 时间同步的dt值
+     */
+    void setTimeSyncDt(double dt);
+    
+    /**
+     * @brief 设置时间同步状态
+     * @param synced 时间是否已同步
+     */
+    void setTimeSynced(bool synced);
+    
+    /**
+     * @brief 获取时间同步的dt值
+     * @return 时间同步的dt值
+     */
+    double getTimeSyncDt() const;
+    
+    /**
+     * @brief 检查时间是否已同步
+     * @return 时间是否已同步
+     */
+    bool isTimeSynced() const;
+};
 
-signals:
+// IMU 传感器类
+class ImuSensor : public SensorBase
+{
+    Q_OBJECT
+
+private:
+    ImuSerialLoader* imuLoader_;
+
+    // 看门狗：最后一次收到有效 IMU 数据的时间
+    QElapsedTimer lastValidDataTimer_;
+
+    // 数据缓存和批量发送相关
+    std::vector<IMU> imuDataBuffer_; // IMU 数据缓存
+    static const int MAX_BUFFER_SIZE = 15; // 最大缓存 15 帧数据
+    QTimer *dataSendTimer_; // 定时发送数据的定时器
+    QTimer *watchdogTimer_; // 看门狗定时器，防止信号丢失
+
+public:
+    /**
+     * @brief 构造函数
+     * @param parent 父对象指针
+     */
+    explicit ImuSensor(QObject *parent = nullptr);
+
+    /**
+     * @brief 析构函数
+     */
+    ~ImuSensor();
+
+    /**
+     * @brief 连接IMU传感器
+     * @return 是否连接成功
+     */
+    bool connect() override;
+
+    /**
+     * @brief 断开IMU传感器连接
+     */
+    void disconnect() override;
+
+    /**
+     * @brief 启动IMU数据采集
+     * @return 是否启动成功
+     */
+    bool start() override;
+
+    /**
+     * @brief 停止IMU数据采集
+     */
+    void stop() override;
+
+    /**
+     * @brief 获取最新IMU数据
+     * @return 数据指针
+     */
+    void* getLatestData() const override;
+
+    /**
+     * @brief 获取IMU加载器
+     * @return IMU加载器指针
+     */
+    ImuSerialLoader* getLoader() const;
     
     /**
-     * @brief IMU数据接收信号
-     * @param imuData IMU数据
+     * @brief 设置 IMU 串口参数
+     * @param port 串口端口
+     * @param baudrate 波特率
      */
-    void imuDataReceived(const IMU& imuData);
+    void setSerialParams(const QString &port, int baudrate);
     
     /**
-     * @brief GNSS数据接收信号
-     * @param gnssData GNSS数据
+     * @brief 看门狗定时器超时处理
      */
-    void gnssDataReceived(const GNSS& gnssData);
+    void onWatchdogTimeout();
 
 private slots:
     /**
-     * @brief IMU数据采集线程函数
-     * @note 在独立线程中运行，实时读取和处理IMU数据
+     * @brief IMU 数据采集线程函数
      */
     void imuDataCollectionThread();
     
     /**
-     * @brief GPS数据采集线程函数
-     * @note 在独立线程中运行，实时读取和处理GPS数据
+     * @brief 定时发送缓存中的数据
      */
-    void gnssDataCollectionThread();
+    void sendBufferedData();
+
+signals:
+    /**
+     * @brief IMU 数据接收信号
+     * @param imuData IMU 数据
+     */
+    void imuDataReceived(const IMU& imuData);
+};
+
+// GPS 传感器类
+class GpsSensor : public SensorBase
+{
+    Q_OBJECT
 
 private:
-    // KF-GINS加载器
-    std::unique_ptr<ImuSerialLoader> imuLoader_;
-    std::unique_ptr<GnssSerialLoader> gnssLoader_;
+    GnssSerialLoader* gnssLoader_;
 
-    // 数据采集线程
-    QThread *imuThread_;
-    QThread *gnssThread_;
+    // 看门狗：最后一次收到有效 GNSS 数据的时间
+    QElapsedTimer lastValidDataTimer_;
+    int watchdogTimeoutStrikes_ = 0; // 连续超时次数（用于 1Hz GPS 的抖动容忍）
 
-    int updateFrequency; ///< 更新频率（Hz）
-    bool imuRunning_; ///< IMU是否正在运行
-    bool gnssRunning_; ///< GPS是否正在运行
-    bool imuConnected_; ///< IMU是否连接
-    bool gnssConnected_; ///< GNSS是否连接
-
-    // 串口参数
-    QString imuPort_;
-    int imuBaudrate_;
-    QString gnssPort_;
-    int gnssBaudrate_;
-
-    // 原始数据缓存
-    QString rawImuData_;
-    QString rawGnssData_;
-
-    // 最新数据缓存
-    IMU latestImuData_;
-    GNSS latestGnssData_;
+    // 时间同步相关变量
+    std::vector<double> localTimeDifferences_;
+    int validGgaCount_; // 有效的 GGA 消息计数
+    
+    // 数据缓存和批量发送相关
+    std::vector<GNSS> gnssDataBuffer_; // GNSS 数据缓存
+    static const int MAX_BUFFER_SIZE = 15; // 最大缓存 15 帧数据
+    QTimer *dataSendTimer_; // 定时发送数据的定时器
+    QTimer *watchdogTimer_; // 看门狗定时器，防止信号丢失
 
 public:
     /**
-     * @brief 获取最新的IMU数据
-     * @return 最新的IMU数据
+     * @brief 构造函数
+     * @param parent 父对象指针
      */
-    IMU getLatestImuData() const;
+    explicit GpsSensor(QObject *parent = nullptr);
 
     /**
-     * @brief 获取最新的GNSS数据
-     * @return 最新的GNSS数据
+     * @brief 析构函数
      */
-    GNSS getLatestGnssData() const;
+    ~GpsSensor();
+
+    /**
+     * @brief 连接GPS传感器
+     * @return 是否连接成功
+     */
+    bool connect() override;
+
+    /**
+     * @brief 断开GPS传感器连接
+     */
+    void disconnect() override;
+
+    /**
+     * @brief 启动GPS数据采集
+     * @return 是否启动成功
+     */
+    bool start() override;
+
+    /**
+     * @brief 停止GPS数据采集
+     */
+    void stop() override;
+
+    /**
+     * @brief 获取最新GPS数据
+     * @return 数据指针
+     */
+    void* getLatestData() const override;
+
+    /**
+     * @brief 获取GPS加载器
+     * @return GPS加载器指针
+     */
+    GnssSerialLoader* getLoader() const;
+    
+    /**
+     * @brief 设置GPS串口参数
+     * @param port 串口端口
+     * @param baudrate 波特率
+     */
+    void setSerialParams(const QString &port, int baudrate);
+    
+    /**
+     * @brief 时间同步方法，为所有传感器同步时间
+     * @param gnssData GNSS 数据
+     */
+    void syncTime(const GNSS& gnssData);
+    
+    /**
+     * @brief 看门狗定时器超时处理
+     */
+    void onWatchdogTimeout();
+
+private slots:
+    /**
+     * @brief GPS 数据采集线程函数
+     */
+    void gpsDataCollectionThread();
+    
+    /**
+     * @brief 定时发送缓存中的数据
+     */
+    void sendBufferedData();
+
+signals:
+    /**
+     * @brief GNSS 数据接收信号
+     * @param gnssData GNSS 数据
+     */
+    void gnssDataReceived(const GNSS& gnssData);
+    
+    /**
+     * @brief 时间同步完成信号
+     * @param dt 时间同步的 dt 值
+     */
+    void timeSyncCompleted(double dt);
 };
+
+
 
 #endif // SENSORINTERFACE_H

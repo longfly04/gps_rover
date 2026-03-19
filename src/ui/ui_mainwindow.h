@@ -19,6 +19,7 @@
 #include <QtWidgets/QGroupBox>
 #include <QtWidgets/QHBoxLayout>
 #include <QtWidgets/QLabel>
+#include <QtWidgets/QLineEdit>
 #include <QtWidgets/QListWidget>
 #include <QtWidgets/QMainWindow>
 #include <QtWidgets/QMenu>
@@ -31,6 +32,8 @@
 #include <QtWidgets/QTextEdit>
 #include <QtWidgets/QVBoxLayout>
 #include <QtWidgets/QWidget>
+#include "mapwidget.h"
+#include "tablewidget.h"
 
 QT_BEGIN_NAMESPACE
 
@@ -51,29 +54,121 @@ public:
     QTabWidget *tabWidget;
     QWidget *tab_navigation;
     QVBoxLayout *verticalLayout_2;
-    QWidget *mapWidget;
-    QHBoxLayout *horizontalLayout;
-    QLabel *mapTypeLabel;
-    QComboBox *mapTypeComboBox;
-    QLabel *dataSourceLabel;
-    QComboBox *dataSourceComboBox;
-    QPushButton *calibrateDataButton;
-    QHBoxLayout *timeLayout;
-    QLabel *timeLabel;
-    QLabel *localTimeLabel;
-    QSpacerItem *horizontalSpacer_2;
-    QGroupBox *sensorDataGroupBox;
-    QGridLayout *sensorDataGridLayout;
-    QLabel *imuDataLabel;
-    QLabel *imuTimeLabel;
-    QLabel *imuAccLabel;
-    QLabel *imuGyroLabel;
-    QLabel *imuAngleLabel;
-    QLabel *imuMagneticHeadingLabel;
-    QLabel *gpsDataLabel;
-    QLabel *gpsTimeLabel;
-    QLabel *gpsPositionLabel;
-    QLabel *gpsAltSpeedLabel;
+    MapWidget *mapWidget;
+    QWidget *tab_settings;
+    QVBoxLayout *verticalLayout_3;
+    QGroupBox *deviceStatusGroupBox;
+    QHBoxLayout *deviceStatusLayout;
+    QVBoxLayout *vboxLayout;
+    QLabel *imuStatusLabel;
+    QHBoxLayout *hboxLayout;
+    QPushButton *imuConnectButton;
+    QPushButton *imuDisconnectButton;
+    QVBoxLayout *vboxLayout1;
+    QLabel *gpsStatusLabel;
+    QHBoxLayout *hboxLayout1;
+    QPushButton *gpsConnectButton;
+    QPushButton *gpsDisconnectButton;
+    QVBoxLayout *vboxLayout2;
+    QLabel *plcStatusLabel;
+    QHBoxLayout *hboxLayout2;
+    QPushButton *plcConnectButton;
+    QPushButton *plcDisconnectButton;
+    QHBoxLayout *sensorSettingsLayout;
+    QGroupBox *imuSettingsGroupBox;
+    QFormLayout *imuFormLayout;
+    QLabel *imuPortLabel;
+    QComboBox *imuPortComboBox;
+    QLabel *imuBaudLabel;
+    QComboBox *imuBaudComboBox;
+    QLabel *imuConfigLabel;
+    QGroupBox *gpsSettingsGroupBox;
+    QFormLayout *gpsFormLayout;
+    QLabel *gpsPortLabel;
+    QComboBox *gpsPortComboBox;
+    QLabel *gpsBaudLabel;
+    QComboBox *gpsBaudComboBox;
+    QLabel *gpsConfigLabel;
+    QGroupBox *plcSettingsGroupBox;
+    QFormLayout *plcFormLayout;
+    QLabel *plcPortLabel;
+    QLineEdit *plcIpLineEdit;
+    QLabel *plcBaudLabel;
+    QLineEdit *plcPortLineEdit;
+    QLabel *plcConfigLabel;
+    QGroupBox *plcGroupBox;
+    QHBoxLayout *plcLayout;
+    QGroupBox *plcInputGroupBox;
+    QVBoxLayout *plcInputLayout;
+    QLabel *plcInputDataLabel;
+    QGroupBox *plcOutputGroupBox;
+    QVBoxLayout *plcOutputLayout;
+    QTextEdit *plcCommandTextEdit;
+    QPushButton *plcSendButton;
+    QGroupBox *coordinateSystemGroupBox;
+    QVBoxLayout *coordinateSystemLayout;
+    TableWidget *coordinateSystemWidget;
+    QHBoxLayout *parametersLayout;
+    QGroupBox *groupBox;
+    QGridLayout *formLayout;
+    QLabel *areaLengthLabel;
+    QDoubleSpinBox *areaLengthSpinBox;
+    QLabel *areaWidthLabel;
+    QDoubleSpinBox *areaWidthSpinBox;
+    QLabel *label;
+    QDoubleSpinBox *rowSpacingSpinBox;
+    QLabel *fieldLengthLabel;
+    QDoubleSpinBox *fieldLengthSpinBox;
+    QLabel *label_2;
+    QDoubleSpinBox *headlandWidthSpinBox;
+    QLabel *label_3;
+    QSpinBox *rowsPerBlockSpinBox;
+    QLabel *seedsPerBlockLabel;
+    QSpinBox *seedsPerBlockSpinBox;
+    QLabel *triggerDistanceLabel;
+    QDoubleSpinBox *triggerDistanceSpinBox;
+    QLabel *stopTriggerDistanceLabel;
+    QDoubleSpinBox *stopTriggerDistanceSpinBox;
+    QGroupBox *pathPlanningGroupBox;
+    QGridLayout *pathPlanningFormLayout;
+    QLabel *oPointLatitudeLabel;
+    QDoubleSpinBox *oPointLatitudeSpinBox;
+    QLabel *oPointLongitudeLabel;
+    QDoubleSpinBox *oPointLongitudeSpinBox;
+    QLabel *aPointLatitudeLabel;
+    QDoubleSpinBox *aPointLatitudeSpinBox;
+    QLabel *aPointLongitudeLabel;
+    QDoubleSpinBox *aPointLongitudeSpinBox;
+    QLabel *speedPulseFactorLabel;
+    QDoubleSpinBox *speedPulseFactorSpinBox;
+    QLabel *speedFrequencyFactorLabel;
+    QDoubleSpinBox *speedFrequencyFactorSpinBox;
+    QHBoxLayout *configFileLayout;
+    QPushButton *generateConfigButton;
+    QPushButton *clearConfigButton;
+    QPushButton *loadConfigButton;
+    QPushButton *saveConfigButton;
+    QSpacerItem *verticalSpacer;
+    QWidget *tab_data;
+    QVBoxLayout *verticalLayout_4;
+    QGroupBox *databaseGroupBox;
+    QVBoxLayout *databaseLayout;
+    QLabel *databaseStatusLabel;
+    QPushButton *connectDatabaseButton;
+    QGroupBox *jobInfoGroupBox;
+    QHBoxLayout *jobInfoLayout;
+    QLabel *jobIdLabel;
+    QLabel *jobIdValueLabel;
+    QSpacerItem *horizontalSpacer_4;
+    QLabel *jobDateLabel;
+    QLabel *jobDateValueLabel;
+    QSpacerItem *horizontalSpacer_5;
+    QLabel *jobAreaLabel;
+    QLabel *jobAreaValueLabel;
+    QSpacerItem *horizontalSpacer_6;
+    QLabel *jobSeedlingsLabel;
+    QLabel *jobSeedlingsValueLabel;
+    QSpacerItem *horizontalSpacer_7;
     QGroupBox *operationControlGroupBox;
     QVBoxLayout *operationControlLayout;
     QHBoxLayout *seedingStatusLayout;
@@ -93,150 +188,25 @@ public:
     QPushButton *startButton;
     QPushButton *stopButton;
     QPushButton *configButton;
-    QWidget *tab_settings;
-    QVBoxLayout *verticalLayout_3;
-    QGroupBox *deviceStatusGroupBox;
-    QHBoxLayout *deviceStatusLayout;
-    QVBoxLayout *vboxLayout;
-    QLabel *imuStatusLabel;
-    QHBoxLayout *hboxLayout;
-    QPushButton *imuConnectButton;
-    QPushButton *imuDisconnectButton;
-    QVBoxLayout *vboxLayout1;
-    QLabel *gpsStatusLabel;
-    QHBoxLayout *hboxLayout1;
-    QPushButton *gpsConnectButton;
-    QPushButton *gpsDisconnectButton;
-    QHBoxLayout *sensorSettingsLayout;
-    QGroupBox *imuSettingsGroupBox;
-    QFormLayout *imuFormLayout;
-    QLabel *imuPortLabel;
-    QComboBox *imuPortComboBox;
-    QLabel *imuBaudLabel;
-    QComboBox *imuBaudComboBox;
-    QLabel *imuConfigLabel;
-    QGroupBox *gpsSettingsGroupBox;
-    QFormLayout *gpsFormLayout;
-    QLabel *gpsPortLabel;
-    QComboBox *gpsPortComboBox;
-    QLabel *gpsBaudLabel;
-    QComboBox *gpsBaudComboBox;
-    QLabel *gpsConfigLabel;
-    QHBoxLayout *serialOutputLayout;
-    QGroupBox *imuOutputGroupBox;
-    QGridLayout *imuOutputLayout;
-    QLabel *imuTimeLabel1;
-    QLabel *imuTimeValueLabel;
-    QLabel *imuDtLabel;
-    QLabel *imuDtValueLabel;
+    QGroupBox *timeAndSensorGroupBox;
+    QVBoxLayout *timeAndSensorLayout;
+    QHBoxLayout *timeAndSensorTopLayout;
+    QLabel *timeLabel;
+    QLabel *localTimeLabel;
+    QSpacerItem *horizontalSpacer_2;
+    QLabel *gpsTimeLabel;
+    QLabel *gpsTimeValueLabel;
+    QSpacerItem *horizontalSpacer_8;
+    QGridLayout *sensorDataGridLayout;
+    QLabel *imuAccelerationLabel;
+    QLabel *gpsPositionLabel;
     QLabel *imuDthetaLabel;
-    QLabel *imuDthetaValueLabel;
-    QLabel *imuDvelLabel;
-    QLabel *imuDvelValueLabel;
-    QLabel *imuOdovelLabel;
-    QLabel *imuOdovelValueLabel;
-    QLabel *imuMagneticFieldLabel;
-    QLabel *imuMagneticFieldValueLabel;
-    QLabel *imuTemperatureLabel;
-    QLabel *imuTemperatureValueLabel;
+    QLabel *speedLabel;
     QLabel *imuOutputMagneticHeadingLabel;
-    QLabel *imuOutputMagneticHeadingValueLabel;
-    QLabel *imuTrueHeadingLabel;
-    QLabel *imuTrueHeadingValueLabel;
-    QGroupBox *gpsOutputGroupBox;
-    QGridLayout *gpsOutputLayout;
-    QLabel *gnssTimeLabel;
-    QLabel *gnssTimeValueLabel;
-    QLabel *gnssPositionLabel;
-    QLabel *gnssPositionValueLabel;
-    QLabel *gnssVelocityLabel;
-    QLabel *gnssVelocityValueLabel;
-    QLabel *gnssStdLabel;
-    QLabel *gnssStdValueLabel;
-    QLabel *gnssValidLabel;
-    QLabel *gnssValidValueLabel;
-    QLabel *gnssQualityLabel;
-    QLabel *gnssQualityValueLabel;
-    QLabel *gnssFixModeLabel;
-    QLabel *gnssFixModeValueLabel;
-    QLabel *gnssHdopLabel;
-    QLabel *gnssHdopValueLabel;
-    QLabel *gnssVdopLabel;
-    QLabel *gnssVdopValueLabel;
-    QLabel *gnssPdopLabel;
-    QLabel *gnssPdopValueLabel;
-    QLabel *gnssVisibleSvLabel;
-    QLabel *gnssVisibleSvValueLabel;
-    QLabel *gnssUsedSvLabel;
-    QLabel *gnssUsedSvValueLabel;
-    QLabel *gnssGroundSpeedLabel;
-    QLabel *gnssGroundSpeedValueLabel;
-    QLabel *gnssTrueHeadingLabel;
-    QLabel *gnssTrueHeadingValueLabel;
-    QLabel *gnssMagneticHeadingLabel;
-    QLabel *gnssMagneticHeadingValueLabel;
-    QLabel *gnssSigmaLatLabel;
-    QLabel *gnssSigmaLatValueLabel;
-    QLabel *gnssSigmaLonLabel;
-    QLabel *gnssSigmaLonValueLabel;
-    QLabel *gnssSigmaAltLabel;
-    QLabel *gnssSigmaAltValueLabel;
-    QLabel *gnssSigmaRangeLabel;
-    QLabel *gnssSigmaRangeValueLabel;
-    QGroupBox *logDisplayGroupBox;
-    QVBoxLayout *logDisplayLayout;
-    QTextEdit *logDisplayTextEdit;
-    QHBoxLayout *logLevelLayout;
-    QLabel *logLevelLabel;
-    QComboBox *logLevelComboBox;
-    QSpacerItem *horizontalSpacer_3;
-    QSpacerItem *verticalSpacer;
-    QWidget *tab_data;
-    QVBoxLayout *verticalLayout_4;
-    QGroupBox *groupBox;
-    QFormLayout *formLayout;
-    QLabel *label;
-    QDoubleSpinBox *rowSpacingSpinBox;
-    QLabel *label_2;
-    QDoubleSpinBox *headlandWidthSpinBox;
-    QLabel *label_3;
-    QSpinBox *rowsPerBlockSpinBox;
-    QGroupBox *pathPlanningGroupBox;
-    QFormLayout *pathPlanningFormLayout;
-    QLabel *triggerDistanceLabel;
-    QDoubleSpinBox *triggerDistanceSpinBox;
-    QLabel *safetyMarginLabel;
-    QDoubleSpinBox *safetyMarginSpinBox;
-    QLabel *fieldLengthLabel;
-    QDoubleSpinBox *fieldLengthSpinBox;
-    QLabel *advanceDistanceLabel;
-    QDoubleSpinBox *advanceDistanceSpinBox;
-    QGroupBox *groupBox_2;
-    QFormLayout *formLayout_2;
-    QLabel *label_4;
-    QDoubleSpinBox *delaySpinBox;
-    QLabel *label_5;
-    QDoubleSpinBox *hysteresisSpinBox;
-    QHBoxLayout *configFileLayout;
-    QPushButton *loadConfigButton;
-    QPushButton *saveConfigButton;
-    QGroupBox *databaseGroupBox;
-    QVBoxLayout *databaseLayout;
-    QLabel *databaseStatusLabel;
-    QPushButton *connectDatabaseButton;
-    QGroupBox *historyGroupBox;
-    QVBoxLayout *historyLayout;
-    QListWidget *historyListWidget;
-    QGroupBox *jobInfoGroupBox;
-    QFormLayout *jobInfoLayout;
-    QLabel *jobIdLabel;
-    QLabel *jobIdValueLabel;
-    QLabel *jobDateLabel;
-    QLabel *jobDateValueLabel;
-    QLabel *jobAreaLabel;
-    QLabel *jobAreaValueLabel;
-    QLabel *jobSeedlingsLabel;
-    QLabel *jobSeedlingsValueLabel;
+    QLabel *magneticHeadingLabel;
+    QLabel *imuAngleDisplayLabel;
+    QLabel *imuDataCountLabel;
+    QLabel *gpsDataCountLabel;
     QMenuBar *menubar;
     QMenu *menuFile;
     QMenu *menuEdit;
@@ -247,7 +217,7 @@ public:
     {
         if (MainWindow->objectName().isEmpty())
             MainWindow->setObjectName("MainWindow");
-        MainWindow->resize(1024, 1114);
+        MainWindow->resize(1024, 1247);
         actionOpen = new QAction(MainWindow);
         actionOpen->setObjectName("actionOpen");
         actionSave = new QAction(MainWindow);
@@ -276,209 +246,11 @@ public:
         tab_navigation->setObjectName("tab_navigation");
         verticalLayout_2 = new QVBoxLayout(tab_navigation);
         verticalLayout_2->setObjectName("verticalLayout_2");
-        mapWidget = new QWidget(tab_navigation);
+        mapWidget = new MapWidget(tab_navigation);
         mapWidget->setObjectName("mapWidget");
-        mapWidget->setMinimumSize(QSize(0, 400));
+        mapWidget->setMinimumSize(QSize(800, 600));
 
         verticalLayout_2->addWidget(mapWidget);
-
-        horizontalLayout = new QHBoxLayout();
-        horizontalLayout->setObjectName("horizontalLayout");
-        mapTypeLabel = new QLabel(tab_navigation);
-        mapTypeLabel->setObjectName("mapTypeLabel");
-
-        horizontalLayout->addWidget(mapTypeLabel);
-
-        mapTypeComboBox = new QComboBox(tab_navigation);
-        mapTypeComboBox->setObjectName("mapTypeComboBox");
-
-        horizontalLayout->addWidget(mapTypeComboBox);
-
-        dataSourceLabel = new QLabel(tab_navigation);
-        dataSourceLabel->setObjectName("dataSourceLabel");
-
-        horizontalLayout->addWidget(dataSourceLabel);
-
-        dataSourceComboBox = new QComboBox(tab_navigation);
-        dataSourceComboBox->setObjectName("dataSourceComboBox");
-
-        horizontalLayout->addWidget(dataSourceComboBox);
-
-        calibrateDataButton = new QPushButton(tab_navigation);
-        calibrateDataButton->setObjectName("calibrateDataButton");
-
-        horizontalLayout->addWidget(calibrateDataButton);
-
-
-        verticalLayout_2->addLayout(horizontalLayout);
-
-        timeLayout = new QHBoxLayout();
-        timeLayout->setObjectName("timeLayout");
-        timeLabel = new QLabel(tab_navigation);
-        timeLabel->setObjectName("timeLabel");
-
-        timeLayout->addWidget(timeLabel);
-
-        localTimeLabel = new QLabel(tab_navigation);
-        localTimeLabel->setObjectName("localTimeLabel");
-
-        timeLayout->addWidget(localTimeLabel);
-
-        horizontalSpacer_2 = new QSpacerItem(40, 20, QSizePolicy::Policy::Expanding, QSizePolicy::Policy::Minimum);
-
-        timeLayout->addItem(horizontalSpacer_2);
-
-
-        verticalLayout_2->addLayout(timeLayout);
-
-        sensorDataGroupBox = new QGroupBox(tab_navigation);
-        sensorDataGroupBox->setObjectName("sensorDataGroupBox");
-        sensorDataGridLayout = new QGridLayout(sensorDataGroupBox);
-        sensorDataGridLayout->setObjectName("sensorDataGridLayout");
-        imuDataLabel = new QLabel(sensorDataGroupBox);
-        imuDataLabel->setObjectName("imuDataLabel");
-
-        sensorDataGridLayout->addWidget(imuDataLabel, 0, 0, 1, 1);
-
-        imuTimeLabel = new QLabel(sensorDataGroupBox);
-        imuTimeLabel->setObjectName("imuTimeLabel");
-
-        sensorDataGridLayout->addWidget(imuTimeLabel, 0, 1, 1, 1);
-
-        imuAccLabel = new QLabel(sensorDataGroupBox);
-        imuAccLabel->setObjectName("imuAccLabel");
-
-        sensorDataGridLayout->addWidget(imuAccLabel, 1, 1, 1, 1);
-
-        imuGyroLabel = new QLabel(sensorDataGroupBox);
-        imuGyroLabel->setObjectName("imuGyroLabel");
-
-        sensorDataGridLayout->addWidget(imuGyroLabel, 2, 1, 1, 1);
-
-        imuAngleLabel = new QLabel(sensorDataGroupBox);
-        imuAngleLabel->setObjectName("imuAngleLabel");
-
-        sensorDataGridLayout->addWidget(imuAngleLabel, 3, 1, 1, 1);
-
-        imuMagneticHeadingLabel = new QLabel(sensorDataGroupBox);
-        imuMagneticHeadingLabel->setObjectName("imuMagneticHeadingLabel");
-
-        sensorDataGridLayout->addWidget(imuMagneticHeadingLabel, 4, 1, 1, 1);
-
-        gpsDataLabel = new QLabel(sensorDataGroupBox);
-        gpsDataLabel->setObjectName("gpsDataLabel");
-
-        sensorDataGridLayout->addWidget(gpsDataLabel, 0, 2, 1, 1);
-
-        gpsTimeLabel = new QLabel(sensorDataGroupBox);
-        gpsTimeLabel->setObjectName("gpsTimeLabel");
-
-        sensorDataGridLayout->addWidget(gpsTimeLabel, 1, 2, 1, 1);
-
-        gpsPositionLabel = new QLabel(sensorDataGroupBox);
-        gpsPositionLabel->setObjectName("gpsPositionLabel");
-
-        sensorDataGridLayout->addWidget(gpsPositionLabel, 2, 2, 1, 1);
-
-        gpsAltSpeedLabel = new QLabel(sensorDataGroupBox);
-        gpsAltSpeedLabel->setObjectName("gpsAltSpeedLabel");
-
-        sensorDataGridLayout->addWidget(gpsAltSpeedLabel, 3, 2, 1, 1);
-
-
-        verticalLayout_2->addWidget(sensorDataGroupBox);
-
-        operationControlGroupBox = new QGroupBox(tab_navigation);
-        operationControlGroupBox->setObjectName("operationControlGroupBox");
-        operationControlLayout = new QVBoxLayout(operationControlGroupBox);
-        operationControlLayout->setObjectName("operationControlLayout");
-        seedingStatusLayout = new QHBoxLayout();
-        seedingStatusLayout->setObjectName("seedingStatusLayout");
-        seedingStatusLabel = new QLabel(operationControlGroupBox);
-        seedingStatusLabel->setObjectName("seedingStatusLabel");
-
-        seedingStatusLayout->addWidget(seedingStatusLabel);
-
-        seedingStatusIndicator = new QLabel(operationControlGroupBox);
-        seedingStatusIndicator->setObjectName("seedingStatusIndicator");
-
-        seedingStatusLayout->addWidget(seedingStatusIndicator);
-
-        horizontalSpacer = new QSpacerItem(40, 20, QSizePolicy::Policy::Minimum, QSizePolicy::Policy::Expanding);
-
-        seedingStatusLayout->addItem(horizontalSpacer);
-
-
-        operationControlLayout->addLayout(seedingStatusLayout);
-
-        fieldListWidget = new QListWidget(operationControlGroupBox);
-        fieldListWidget->setObjectName("fieldListWidget");
-        fieldListWidget->setMinimumSize(QSize(0, 100));
-
-        operationControlLayout->addWidget(fieldListWidget);
-
-        controlDataGridLayout = new QGridLayout();
-        controlDataGridLayout->setObjectName("controlDataGridLayout");
-        pathPlanningLabel = new QLabel(operationControlGroupBox);
-        pathPlanningLabel->setObjectName("pathPlanningLabel");
-
-        controlDataGridLayout->addWidget(pathPlanningLabel, 0, 0, 1, 1);
-
-        currentSectionLabel = new QLabel(operationControlGroupBox);
-        currentSectionLabel->setObjectName("currentSectionLabel");
-
-        controlDataGridLayout->addWidget(currentSectionLabel, 0, 1, 1, 1);
-
-        targetPointLabel = new QLabel(operationControlGroupBox);
-        targetPointLabel->setObjectName("targetPointLabel");
-
-        controlDataGridLayout->addWidget(targetPointLabel, 1, 1, 1, 1);
-
-        triggerPointLabel = new QLabel(operationControlGroupBox);
-        triggerPointLabel->setObjectName("triggerPointLabel");
-
-        controlDataGridLayout->addWidget(triggerPointLabel, 2, 1, 1, 1);
-
-        operationDataLabel = new QLabel(operationControlGroupBox);
-        operationDataLabel->setObjectName("operationDataLabel");
-
-        controlDataGridLayout->addWidget(operationDataLabel, 0, 2, 1, 1);
-
-        seedlingsCountLabel = new QLabel(operationControlGroupBox);
-        seedlingsCountLabel->setObjectName("seedlingsCountLabel");
-
-        controlDataGridLayout->addWidget(seedlingsCountLabel, 1, 2, 1, 1);
-
-        operationProgressLabel = new QLabel(operationControlGroupBox);
-        operationProgressLabel->setObjectName("operationProgressLabel");
-
-        controlDataGridLayout->addWidget(operationProgressLabel, 2, 2, 1, 1);
-
-
-        operationControlLayout->addLayout(controlDataGridLayout);
-
-
-        verticalLayout_2->addWidget(operationControlGroupBox);
-
-        horizontalLayout_2 = new QHBoxLayout();
-        horizontalLayout_2->setObjectName("horizontalLayout_2");
-        startButton = new QPushButton(tab_navigation);
-        startButton->setObjectName("startButton");
-
-        horizontalLayout_2->addWidget(startButton);
-
-        stopButton = new QPushButton(tab_navigation);
-        stopButton->setObjectName("stopButton");
-
-        horizontalLayout_2->addWidget(stopButton);
-
-        configButton = new QPushButton(tab_navigation);
-        configButton->setObjectName("configButton");
-
-        horizontalLayout_2->addWidget(configButton);
-
-
-        verticalLayout_2->addLayout(horizontalLayout_2);
 
         tabWidget->addTab(tab_navigation, QString());
         tab_settings = new QWidget();
@@ -538,6 +310,31 @@ public:
 
 
         deviceStatusLayout->addLayout(vboxLayout1);
+
+        vboxLayout2 = new QVBoxLayout();
+        vboxLayout2->setObjectName("vboxLayout2");
+        plcStatusLabel = new QLabel(deviceStatusGroupBox);
+        plcStatusLabel->setObjectName("plcStatusLabel");
+
+        vboxLayout2->addWidget(plcStatusLabel);
+
+        hboxLayout2 = new QHBoxLayout();
+        hboxLayout2->setObjectName("hboxLayout2");
+        plcConnectButton = new QPushButton(deviceStatusGroupBox);
+        plcConnectButton->setObjectName("plcConnectButton");
+
+        hboxLayout2->addWidget(plcConnectButton);
+
+        plcDisconnectButton = new QPushButton(deviceStatusGroupBox);
+        plcDisconnectButton->setObjectName("plcDisconnectButton");
+
+        hboxLayout2->addWidget(plcDisconnectButton);
+
+
+        vboxLayout2->addLayout(hboxLayout2);
+
+
+        deviceStatusLayout->addLayout(vboxLayout2);
 
 
         verticalLayout_3->addWidget(deviceStatusGroupBox);
@@ -626,344 +423,361 @@ public:
 
         sensorSettingsLayout->addWidget(gpsSettingsGroupBox);
 
+        plcSettingsGroupBox = new QGroupBox(tab_settings);
+        plcSettingsGroupBox->setObjectName("plcSettingsGroupBox");
+        plcFormLayout = new QFormLayout(plcSettingsGroupBox);
+        plcFormLayout->setObjectName("plcFormLayout");
+        plcPortLabel = new QLabel(plcSettingsGroupBox);
+        plcPortLabel->setObjectName("plcPortLabel");
+
+        plcFormLayout->setWidget(0, QFormLayout::ItemRole::LabelRole, plcPortLabel);
+
+        plcIpLineEdit = new QLineEdit(plcSettingsGroupBox);
+        plcIpLineEdit->setObjectName("plcIpLineEdit");
+
+        plcFormLayout->setWidget(0, QFormLayout::ItemRole::FieldRole, plcIpLineEdit);
+
+        plcBaudLabel = new QLabel(plcSettingsGroupBox);
+        plcBaudLabel->setObjectName("plcBaudLabel");
+
+        plcFormLayout->setWidget(1, QFormLayout::ItemRole::LabelRole, plcBaudLabel);
+
+        plcPortLineEdit = new QLineEdit(plcSettingsGroupBox);
+        plcPortLineEdit->setObjectName("plcPortLineEdit");
+
+        plcFormLayout->setWidget(1, QFormLayout::ItemRole::FieldRole, plcPortLineEdit);
+
+        plcConfigLabel = new QLabel(plcSettingsGroupBox);
+        plcConfigLabel->setObjectName("plcConfigLabel");
+
+        plcFormLayout->setWidget(2, QFormLayout::ItemRole::SpanningRole, plcConfigLabel);
+
+
+        sensorSettingsLayout->addWidget(plcSettingsGroupBox);
+
 
         verticalLayout_3->addLayout(sensorSettingsLayout);
 
-        serialOutputLayout = new QHBoxLayout();
-        serialOutputLayout->setObjectName("serialOutputLayout");
-        imuOutputGroupBox = new QGroupBox(tab_settings);
-        imuOutputGroupBox->setObjectName("imuOutputGroupBox");
-        imuOutputLayout = new QGridLayout(imuOutputGroupBox);
-        imuOutputLayout->setObjectName("imuOutputLayout");
-        imuTimeLabel1 = new QLabel(imuOutputGroupBox);
-        imuTimeLabel1->setObjectName("imuTimeLabel1");
+        plcGroupBox = new QGroupBox(tab_settings);
+        plcGroupBox->setObjectName("plcGroupBox");
+        plcLayout = new QHBoxLayout(plcGroupBox);
+        plcLayout->setObjectName("plcLayout");
+        plcInputGroupBox = new QGroupBox(plcGroupBox);
+        plcInputGroupBox->setObjectName("plcInputGroupBox");
+        QSizePolicy sizePolicy(QSizePolicy::Policy::Expanding, QSizePolicy::Policy::Preferred);
+        sizePolicy.setHorizontalStretch(1);
+        sizePolicy.setVerticalStretch(0);
+        sizePolicy.setHeightForWidth(plcInputGroupBox->sizePolicy().hasHeightForWidth());
+        plcInputGroupBox->setSizePolicy(sizePolicy);
+        plcInputLayout = new QVBoxLayout(plcInputGroupBox);
+        plcInputLayout->setObjectName("plcInputLayout");
+        plcInputDataLabel = new QLabel(plcInputGroupBox);
+        plcInputDataLabel->setObjectName("plcInputDataLabel");
 
-        imuOutputLayout->addWidget(imuTimeLabel1, 0, 0, 1, 1);
+        plcInputLayout->addWidget(plcInputDataLabel);
 
-        imuTimeValueLabel = new QLabel(imuOutputGroupBox);
-        imuTimeValueLabel->setObjectName("imuTimeValueLabel");
 
-        imuOutputLayout->addWidget(imuTimeValueLabel, 0, 1, 1, 1);
+        plcLayout->addWidget(plcInputGroupBox);
 
-        imuDtLabel = new QLabel(imuOutputGroupBox);
-        imuDtLabel->setObjectName("imuDtLabel");
+        plcOutputGroupBox = new QGroupBox(plcGroupBox);
+        plcOutputGroupBox->setObjectName("plcOutputGroupBox");
+        sizePolicy.setHeightForWidth(plcOutputGroupBox->sizePolicy().hasHeightForWidth());
+        plcOutputGroupBox->setSizePolicy(sizePolicy);
+        plcOutputLayout = new QVBoxLayout(plcOutputGroupBox);
+        plcOutputLayout->setObjectName("plcOutputLayout");
+        plcCommandTextEdit = new QTextEdit(plcOutputGroupBox);
+        plcCommandTextEdit->setObjectName("plcCommandTextEdit");
 
-        imuOutputLayout->addWidget(imuDtLabel, 1, 0, 1, 1);
+        plcOutputLayout->addWidget(plcCommandTextEdit);
 
-        imuDtValueLabel = new QLabel(imuOutputGroupBox);
-        imuDtValueLabel->setObjectName("imuDtValueLabel");
+        plcSendButton = new QPushButton(plcOutputGroupBox);
+        plcSendButton->setObjectName("plcSendButton");
 
-        imuOutputLayout->addWidget(imuDtValueLabel, 1, 1, 1, 1);
+        plcOutputLayout->addWidget(plcSendButton);
 
-        imuDthetaLabel = new QLabel(imuOutputGroupBox);
-        imuDthetaLabel->setObjectName("imuDthetaLabel");
 
-        imuOutputLayout->addWidget(imuDthetaLabel, 2, 0, 1, 1);
+        plcLayout->addWidget(plcOutputGroupBox);
 
-        imuDthetaValueLabel = new QLabel(imuOutputGroupBox);
-        imuDthetaValueLabel->setObjectName("imuDthetaValueLabel");
 
-        imuOutputLayout->addWidget(imuDthetaValueLabel, 2, 1, 1, 1);
+        verticalLayout_3->addWidget(plcGroupBox);
 
-        imuDvelLabel = new QLabel(imuOutputGroupBox);
-        imuDvelLabel->setObjectName("imuDvelLabel");
+        coordinateSystemGroupBox = new QGroupBox(tab_settings);
+        coordinateSystemGroupBox->setObjectName("coordinateSystemGroupBox");
+        coordinateSystemLayout = new QVBoxLayout(coordinateSystemGroupBox);
+        coordinateSystemLayout->setObjectName("coordinateSystemLayout");
+        coordinateSystemWidget = new TableWidget(coordinateSystemGroupBox);
+        coordinateSystemWidget->setObjectName("coordinateSystemWidget");
+        coordinateSystemWidget->setMinimumSize(QSize(0, 200));
 
-        imuOutputLayout->addWidget(imuDvelLabel, 3, 0, 1, 1);
+        coordinateSystemLayout->addWidget(coordinateSystemWidget);
 
-        imuDvelValueLabel = new QLabel(imuOutputGroupBox);
-        imuDvelValueLabel->setObjectName("imuDvelValueLabel");
 
-        imuOutputLayout->addWidget(imuDvelValueLabel, 3, 1, 1, 1);
+        verticalLayout_3->addWidget(coordinateSystemGroupBox);
 
-        imuOdovelLabel = new QLabel(imuOutputGroupBox);
-        imuOdovelLabel->setObjectName("imuOdovelLabel");
+        parametersLayout = new QHBoxLayout();
+        parametersLayout->setObjectName("parametersLayout");
+        groupBox = new QGroupBox(tab_settings);
+        groupBox->setObjectName("groupBox");
+        formLayout = new QGridLayout(groupBox);
+        formLayout->setObjectName("formLayout");
+        areaLengthLabel = new QLabel(groupBox);
+        areaLengthLabel->setObjectName("areaLengthLabel");
 
-        imuOutputLayout->addWidget(imuOdovelLabel, 4, 0, 1, 1);
+        formLayout->addWidget(areaLengthLabel, 0, 0, 1, 1);
 
-        imuOdovelValueLabel = new QLabel(imuOutputGroupBox);
-        imuOdovelValueLabel->setObjectName("imuOdovelValueLabel");
+        areaLengthSpinBox = new QDoubleSpinBox(groupBox);
+        areaLengthSpinBox->setObjectName("areaLengthSpinBox");
+        areaLengthSpinBox->setDecimals(1);
+        areaLengthSpinBox->setMinimum(1.000000000000000);
+        areaLengthSpinBox->setMaximum(1000.000000000000000);
+        areaLengthSpinBox->setSingleStep(1.000000000000000);
+        areaLengthSpinBox->setValue(100.000000000000000);
 
-        imuOutputLayout->addWidget(imuOdovelValueLabel, 4, 1, 1, 1);
+        formLayout->addWidget(areaLengthSpinBox, 0, 1, 1, 1);
 
-        imuMagneticFieldLabel = new QLabel(imuOutputGroupBox);
-        imuMagneticFieldLabel->setObjectName("imuMagneticFieldLabel");
+        areaWidthLabel = new QLabel(groupBox);
+        areaWidthLabel->setObjectName("areaWidthLabel");
 
-        imuOutputLayout->addWidget(imuMagneticFieldLabel, 5, 0, 1, 1);
+        formLayout->addWidget(areaWidthLabel, 0, 2, 1, 1);
 
-        imuMagneticFieldValueLabel = new QLabel(imuOutputGroupBox);
-        imuMagneticFieldValueLabel->setObjectName("imuMagneticFieldValueLabel");
+        areaWidthSpinBox = new QDoubleSpinBox(groupBox);
+        areaWidthSpinBox->setObjectName("areaWidthSpinBox");
+        areaWidthSpinBox->setDecimals(1);
+        areaWidthSpinBox->setMinimum(1.000000000000000);
+        areaWidthSpinBox->setMaximum(2000.000000000000000);
+        areaWidthSpinBox->setSingleStep(10.000000000000000);
+        areaWidthSpinBox->setValue(1000.000000000000000);
 
-        imuOutputLayout->addWidget(imuMagneticFieldValueLabel, 5, 1, 1, 1);
+        formLayout->addWidget(areaWidthSpinBox, 0, 3, 1, 1);
 
-        imuTemperatureLabel = new QLabel(imuOutputGroupBox);
-        imuTemperatureLabel->setObjectName("imuTemperatureLabel");
+        label = new QLabel(groupBox);
+        label->setObjectName("label");
 
-        imuOutputLayout->addWidget(imuTemperatureLabel, 6, 0, 1, 1);
+        formLayout->addWidget(label, 1, 0, 1, 1);
 
-        imuTemperatureValueLabel = new QLabel(imuOutputGroupBox);
-        imuTemperatureValueLabel->setObjectName("imuTemperatureValueLabel");
+        rowSpacingSpinBox = new QDoubleSpinBox(groupBox);
+        rowSpacingSpinBox->setObjectName("rowSpacingSpinBox");
+        rowSpacingSpinBox->setDecimals(1);
+        rowSpacingSpinBox->setMinimum(0.100000000000000);
+        rowSpacingSpinBox->setMaximum(2.000000000000000);
+        rowSpacingSpinBox->setSingleStep(0.100000000000000);
+        rowSpacingSpinBox->setValue(0.600000000000000);
 
-        imuOutputLayout->addWidget(imuTemperatureValueLabel, 6, 1, 1, 1);
+        formLayout->addWidget(rowSpacingSpinBox, 1, 1, 1, 1);
 
-        imuOutputMagneticHeadingLabel = new QLabel(imuOutputGroupBox);
-        imuOutputMagneticHeadingLabel->setObjectName("imuOutputMagneticHeadingLabel");
+        fieldLengthLabel = new QLabel(groupBox);
+        fieldLengthLabel->setObjectName("fieldLengthLabel");
 
-        imuOutputLayout->addWidget(imuOutputMagneticHeadingLabel, 7, 0, 1, 1);
+        formLayout->addWidget(fieldLengthLabel, 1, 2, 1, 1);
 
-        imuOutputMagneticHeadingValueLabel = new QLabel(imuOutputGroupBox);
-        imuOutputMagneticHeadingValueLabel->setObjectName("imuOutputMagneticHeadingValueLabel");
+        fieldLengthSpinBox = new QDoubleSpinBox(groupBox);
+        fieldLengthSpinBox->setObjectName("fieldLengthSpinBox");
+        fieldLengthSpinBox->setDecimals(1);
+        fieldLengthSpinBox->setMinimum(1.000000000000000);
+        fieldLengthSpinBox->setMaximum(100.000000000000000);
+        fieldLengthSpinBox->setSingleStep(0.100000000000000);
+        fieldLengthSpinBox->setValue(5.000000000000000);
 
-        imuOutputLayout->addWidget(imuOutputMagneticHeadingValueLabel, 7, 1, 1, 1);
+        formLayout->addWidget(fieldLengthSpinBox, 1, 3, 1, 1);
 
-        imuTrueHeadingLabel = new QLabel(imuOutputGroupBox);
-        imuTrueHeadingLabel->setObjectName("imuTrueHeadingLabel");
+        label_2 = new QLabel(groupBox);
+        label_2->setObjectName("label_2");
 
-        imuOutputLayout->addWidget(imuTrueHeadingLabel, 8, 0, 1, 1);
+        formLayout->addWidget(label_2, 2, 0, 1, 1);
 
-        imuTrueHeadingValueLabel = new QLabel(imuOutputGroupBox);
-        imuTrueHeadingValueLabel->setObjectName("imuTrueHeadingValueLabel");
+        headlandWidthSpinBox = new QDoubleSpinBox(groupBox);
+        headlandWidthSpinBox->setObjectName("headlandWidthSpinBox");
+        headlandWidthSpinBox->setDecimals(1);
+        headlandWidthSpinBox->setMinimum(1.000000000000000);
+        headlandWidthSpinBox->setMaximum(5.000000000000000);
+        headlandWidthSpinBox->setSingleStep(0.100000000000000);
+        headlandWidthSpinBox->setValue(1.000000000000000);
 
-        imuOutputLayout->addWidget(imuTrueHeadingValueLabel, 8, 1, 1, 1);
+        formLayout->addWidget(headlandWidthSpinBox, 2, 1, 1, 1);
 
+        label_3 = new QLabel(groupBox);
+        label_3->setObjectName("label_3");
 
-        serialOutputLayout->addWidget(imuOutputGroupBox);
+        formLayout->addWidget(label_3, 2, 2, 1, 1);
 
-        gpsOutputGroupBox = new QGroupBox(tab_settings);
-        gpsOutputGroupBox->setObjectName("gpsOutputGroupBox");
-        gpsOutputLayout = new QGridLayout(gpsOutputGroupBox);
-        gpsOutputLayout->setObjectName("gpsOutputLayout");
-        gnssTimeLabel = new QLabel(gpsOutputGroupBox);
-        gnssTimeLabel->setObjectName("gnssTimeLabel");
+        rowsPerBlockSpinBox = new QSpinBox(groupBox);
+        rowsPerBlockSpinBox->setObjectName("rowsPerBlockSpinBox");
+        rowsPerBlockSpinBox->setMinimum(1);
+        rowsPerBlockSpinBox->setMaximum(50);
+        rowsPerBlockSpinBox->setValue(2);
 
-        gpsOutputLayout->addWidget(gnssTimeLabel, 0, 0, 1, 1);
+        formLayout->addWidget(rowsPerBlockSpinBox, 2, 3, 1, 1);
 
-        gnssTimeValueLabel = new QLabel(gpsOutputGroupBox);
-        gnssTimeValueLabel->setObjectName("gnssTimeValueLabel");
+        seedsPerBlockLabel = new QLabel(groupBox);
+        seedsPerBlockLabel->setObjectName("seedsPerBlockLabel");
 
-        gpsOutputLayout->addWidget(gnssTimeValueLabel, 0, 1, 1, 1);
+        formLayout->addWidget(seedsPerBlockLabel, 3, 0, 1, 1);
 
-        gnssPositionLabel = new QLabel(gpsOutputGroupBox);
-        gnssPositionLabel->setObjectName("gnssPositionLabel");
+        seedsPerBlockSpinBox = new QSpinBox(groupBox);
+        seedsPerBlockSpinBox->setObjectName("seedsPerBlockSpinBox");
+        seedsPerBlockSpinBox->setMinimum(1);
+        seedsPerBlockSpinBox->setMaximum(10000);
+        seedsPerBlockSpinBox->setValue(25);
 
-        gpsOutputLayout->addWidget(gnssPositionLabel, 1, 0, 1, 1);
+        formLayout->addWidget(seedsPerBlockSpinBox, 3, 1, 1, 1);
 
-        gnssPositionValueLabel = new QLabel(gpsOutputGroupBox);
-        gnssPositionValueLabel->setObjectName("gnssPositionValueLabel");
+        triggerDistanceLabel = new QLabel(groupBox);
+        triggerDistanceLabel->setObjectName("triggerDistanceLabel");
 
-        gpsOutputLayout->addWidget(gnssPositionValueLabel, 1, 1, 1, 1);
+        formLayout->addWidget(triggerDistanceLabel, 3, 2, 1, 1);
 
-        gnssVelocityLabel = new QLabel(gpsOutputGroupBox);
-        gnssVelocityLabel->setObjectName("gnssVelocityLabel");
+        triggerDistanceSpinBox = new QDoubleSpinBox(groupBox);
+        triggerDistanceSpinBox->setObjectName("triggerDistanceSpinBox");
+        triggerDistanceSpinBox->setDecimals(1);
+        triggerDistanceSpinBox->setMinimum(0.100000000000000);
+        triggerDistanceSpinBox->setMaximum(5.000000000000000);
+        triggerDistanceSpinBox->setSingleStep(0.100000000000000);
+        triggerDistanceSpinBox->setValue(1.000000000000000);
 
-        gpsOutputLayout->addWidget(gnssVelocityLabel, 2, 0, 1, 1);
+        formLayout->addWidget(triggerDistanceSpinBox, 3, 3, 1, 1);
 
-        gnssVelocityValueLabel = new QLabel(gpsOutputGroupBox);
-        gnssVelocityValueLabel->setObjectName("gnssVelocityValueLabel");
+        stopTriggerDistanceLabel = new QLabel(groupBox);
+        stopTriggerDistanceLabel->setObjectName("stopTriggerDistanceLabel");
 
-        gpsOutputLayout->addWidget(gnssVelocityValueLabel, 2, 1, 1, 1);
+        formLayout->addWidget(stopTriggerDistanceLabel, 4, 0, 1, 1);
 
-        gnssStdLabel = new QLabel(gpsOutputGroupBox);
-        gnssStdLabel->setObjectName("gnssStdLabel");
+        stopTriggerDistanceSpinBox = new QDoubleSpinBox(groupBox);
+        stopTriggerDistanceSpinBox->setObjectName("stopTriggerDistanceSpinBox");
+        stopTriggerDistanceSpinBox->setDecimals(1);
+        stopTriggerDistanceSpinBox->setMinimum(0.100000000000000);
+        stopTriggerDistanceSpinBox->setMaximum(5.000000000000000);
+        stopTriggerDistanceSpinBox->setSingleStep(0.100000000000000);
+        stopTriggerDistanceSpinBox->setValue(0.500000000000000);
 
-        gpsOutputLayout->addWidget(gnssStdLabel, 3, 0, 1, 1);
+        formLayout->addWidget(stopTriggerDistanceSpinBox, 4, 1, 1, 1);
 
-        gnssStdValueLabel = new QLabel(gpsOutputGroupBox);
-        gnssStdValueLabel->setObjectName("gnssStdValueLabel");
 
-        gpsOutputLayout->addWidget(gnssStdValueLabel, 3, 1, 1, 1);
+        parametersLayout->addWidget(groupBox);
 
-        gnssValidLabel = new QLabel(gpsOutputGroupBox);
-        gnssValidLabel->setObjectName("gnssValidLabel");
+        pathPlanningGroupBox = new QGroupBox(tab_settings);
+        pathPlanningGroupBox->setObjectName("pathPlanningGroupBox");
+        pathPlanningFormLayout = new QGridLayout(pathPlanningGroupBox);
+        pathPlanningFormLayout->setObjectName("pathPlanningFormLayout");
+        oPointLatitudeLabel = new QLabel(pathPlanningGroupBox);
+        oPointLatitudeLabel->setObjectName("oPointLatitudeLabel");
 
-        gpsOutputLayout->addWidget(gnssValidLabel, 4, 0, 1, 1);
+        pathPlanningFormLayout->addWidget(oPointLatitudeLabel, 0, 0, 1, 1);
 
-        gnssValidValueLabel = new QLabel(gpsOutputGroupBox);
-        gnssValidValueLabel->setObjectName("gnssValidValueLabel");
+        oPointLatitudeSpinBox = new QDoubleSpinBox(pathPlanningGroupBox);
+        oPointLatitudeSpinBox->setObjectName("oPointLatitudeSpinBox");
+        oPointLatitudeSpinBox->setDecimals(6);
+        oPointLatitudeSpinBox->setMinimum(-90.000000000000000);
+        oPointLatitudeSpinBox->setMaximum(90.000000000000000);
+        oPointLatitudeSpinBox->setSingleStep(0.000001000000000);
+        oPointLatitudeSpinBox->setValue(0.000000000000000);
 
-        gpsOutputLayout->addWidget(gnssValidValueLabel, 4, 1, 1, 1);
+        pathPlanningFormLayout->addWidget(oPointLatitudeSpinBox, 0, 1, 1, 1);
 
-        gnssQualityLabel = new QLabel(gpsOutputGroupBox);
-        gnssQualityLabel->setObjectName("gnssQualityLabel");
+        oPointLongitudeLabel = new QLabel(pathPlanningGroupBox);
+        oPointLongitudeLabel->setObjectName("oPointLongitudeLabel");
 
-        gpsOutputLayout->addWidget(gnssQualityLabel, 5, 0, 1, 1);
+        pathPlanningFormLayout->addWidget(oPointLongitudeLabel, 0, 2, 1, 1);
 
-        gnssQualityValueLabel = new QLabel(gpsOutputGroupBox);
-        gnssQualityValueLabel->setObjectName("gnssQualityValueLabel");
+        oPointLongitudeSpinBox = new QDoubleSpinBox(pathPlanningGroupBox);
+        oPointLongitudeSpinBox->setObjectName("oPointLongitudeSpinBox");
+        oPointLongitudeSpinBox->setDecimals(6);
+        oPointLongitudeSpinBox->setMinimum(-180.000000000000000);
+        oPointLongitudeSpinBox->setMaximum(180.000000000000000);
+        oPointLongitudeSpinBox->setSingleStep(0.000001000000000);
+        oPointLongitudeSpinBox->setValue(0.000000000000000);
 
-        gpsOutputLayout->addWidget(gnssQualityValueLabel, 5, 1, 1, 1);
+        pathPlanningFormLayout->addWidget(oPointLongitudeSpinBox, 0, 3, 1, 1);
 
-        gnssFixModeLabel = new QLabel(gpsOutputGroupBox);
-        gnssFixModeLabel->setObjectName("gnssFixModeLabel");
+        aPointLatitudeLabel = new QLabel(pathPlanningGroupBox);
+        aPointLatitudeLabel->setObjectName("aPointLatitudeLabel");
 
-        gpsOutputLayout->addWidget(gnssFixModeLabel, 6, 0, 1, 1);
+        pathPlanningFormLayout->addWidget(aPointLatitudeLabel, 1, 0, 1, 1);
 
-        gnssFixModeValueLabel = new QLabel(gpsOutputGroupBox);
-        gnssFixModeValueLabel->setObjectName("gnssFixModeValueLabel");
+        aPointLatitudeSpinBox = new QDoubleSpinBox(pathPlanningGroupBox);
+        aPointLatitudeSpinBox->setObjectName("aPointLatitudeSpinBox");
+        aPointLatitudeSpinBox->setDecimals(6);
+        aPointLatitudeSpinBox->setMinimum(-90.000000000000000);
+        aPointLatitudeSpinBox->setMaximum(90.000000000000000);
+        aPointLatitudeSpinBox->setSingleStep(0.000001000000000);
+        aPointLatitudeSpinBox->setValue(0.000001000000000);
 
-        gpsOutputLayout->addWidget(gnssFixModeValueLabel, 6, 1, 1, 1);
+        pathPlanningFormLayout->addWidget(aPointLatitudeSpinBox, 1, 1, 1, 1);
 
-        gnssHdopLabel = new QLabel(gpsOutputGroupBox);
-        gnssHdopLabel->setObjectName("gnssHdopLabel");
+        aPointLongitudeLabel = new QLabel(pathPlanningGroupBox);
+        aPointLongitudeLabel->setObjectName("aPointLongitudeLabel");
 
-        gpsOutputLayout->addWidget(gnssHdopLabel, 7, 0, 1, 1);
+        pathPlanningFormLayout->addWidget(aPointLongitudeLabel, 1, 2, 1, 1);
 
-        gnssHdopValueLabel = new QLabel(gpsOutputGroupBox);
-        gnssHdopValueLabel->setObjectName("gnssHdopValueLabel");
+        aPointLongitudeSpinBox = new QDoubleSpinBox(pathPlanningGroupBox);
+        aPointLongitudeSpinBox->setObjectName("aPointLongitudeSpinBox");
+        aPointLongitudeSpinBox->setDecimals(6);
+        aPointLongitudeSpinBox->setMinimum(-180.000000000000000);
+        aPointLongitudeSpinBox->setMaximum(180.000000000000000);
+        aPointLongitudeSpinBox->setSingleStep(0.000001000000000);
+        aPointLongitudeSpinBox->setValue(0.000000000000000);
 
-        gpsOutputLayout->addWidget(gnssHdopValueLabel, 7, 1, 1, 1);
+        pathPlanningFormLayout->addWidget(aPointLongitudeSpinBox, 1, 3, 1, 1);
 
-        gnssVdopLabel = new QLabel(gpsOutputGroupBox);
-        gnssVdopLabel->setObjectName("gnssVdopLabel");
+        speedPulseFactorLabel = new QLabel(pathPlanningGroupBox);
+        speedPulseFactorLabel->setObjectName("speedPulseFactorLabel");
 
-        gpsOutputLayout->addWidget(gnssVdopLabel, 8, 0, 1, 1);
+        pathPlanningFormLayout->addWidget(speedPulseFactorLabel, 2, 0, 1, 1);
 
-        gnssVdopValueLabel = new QLabel(gpsOutputGroupBox);
-        gnssVdopValueLabel->setObjectName("gnssVdopValueLabel");
+        speedPulseFactorSpinBox = new QDoubleSpinBox(pathPlanningGroupBox);
+        speedPulseFactorSpinBox->setObjectName("speedPulseFactorSpinBox");
+        speedPulseFactorSpinBox->setDecimals(2);
+        speedPulseFactorSpinBox->setMinimum(0.000000000000000);
+        speedPulseFactorSpinBox->setMaximum(100.000000000000000);
+        speedPulseFactorSpinBox->setSingleStep(0.010000000000000);
+        speedPulseFactorSpinBox->setValue(1.000000000000000);
 
-        gpsOutputLayout->addWidget(gnssVdopValueLabel, 8, 1, 1, 1);
+        pathPlanningFormLayout->addWidget(speedPulseFactorSpinBox, 2, 1, 1, 1);
 
-        gnssPdopLabel = new QLabel(gpsOutputGroupBox);
-        gnssPdopLabel->setObjectName("gnssPdopLabel");
+        speedFrequencyFactorLabel = new QLabel(pathPlanningGroupBox);
+        speedFrequencyFactorLabel->setObjectName("speedFrequencyFactorLabel");
 
-        gpsOutputLayout->addWidget(gnssPdopLabel, 9, 0, 1, 1);
+        pathPlanningFormLayout->addWidget(speedFrequencyFactorLabel, 2, 2, 1, 1);
 
-        gnssPdopValueLabel = new QLabel(gpsOutputGroupBox);
-        gnssPdopValueLabel->setObjectName("gnssPdopValueLabel");
+        speedFrequencyFactorSpinBox = new QDoubleSpinBox(pathPlanningGroupBox);
+        speedFrequencyFactorSpinBox->setObjectName("speedFrequencyFactorSpinBox");
+        speedFrequencyFactorSpinBox->setDecimals(2);
+        speedFrequencyFactorSpinBox->setMinimum(0.000000000000000);
+        speedFrequencyFactorSpinBox->setMaximum(100.000000000000000);
+        speedFrequencyFactorSpinBox->setSingleStep(0.010000000000000);
+        speedFrequencyFactorSpinBox->setValue(1.000000000000000);
 
-        gpsOutputLayout->addWidget(gnssPdopValueLabel, 9, 1, 1, 1);
+        pathPlanningFormLayout->addWidget(speedFrequencyFactorSpinBox, 2, 3, 1, 1);
 
-        gnssVisibleSvLabel = new QLabel(gpsOutputGroupBox);
-        gnssVisibleSvLabel->setObjectName("gnssVisibleSvLabel");
 
-        gpsOutputLayout->addWidget(gnssVisibleSvLabel, 10, 0, 1, 1);
+        parametersLayout->addWidget(pathPlanningGroupBox);
 
-        gnssVisibleSvValueLabel = new QLabel(gpsOutputGroupBox);
-        gnssVisibleSvValueLabel->setObjectName("gnssVisibleSvValueLabel");
 
-        gpsOutputLayout->addWidget(gnssVisibleSvValueLabel, 10, 1, 1, 1);
+        verticalLayout_3->addLayout(parametersLayout);
 
-        gnssUsedSvLabel = new QLabel(gpsOutputGroupBox);
-        gnssUsedSvLabel->setObjectName("gnssUsedSvLabel");
+        configFileLayout = new QHBoxLayout();
+        configFileLayout->setObjectName("configFileLayout");
+        generateConfigButton = new QPushButton(tab_settings);
+        generateConfigButton->setObjectName("generateConfigButton");
 
-        gpsOutputLayout->addWidget(gnssUsedSvLabel, 11, 0, 1, 1);
+        configFileLayout->addWidget(generateConfigButton);
 
-        gnssUsedSvValueLabel = new QLabel(gpsOutputGroupBox);
-        gnssUsedSvValueLabel->setObjectName("gnssUsedSvValueLabel");
+        clearConfigButton = new QPushButton(tab_settings);
+        clearConfigButton->setObjectName("clearConfigButton");
 
-        gpsOutputLayout->addWidget(gnssUsedSvValueLabel, 11, 1, 1, 1);
+        configFileLayout->addWidget(clearConfigButton);
 
-        gnssGroundSpeedLabel = new QLabel(gpsOutputGroupBox);
-        gnssGroundSpeedLabel->setObjectName("gnssGroundSpeedLabel");
+        loadConfigButton = new QPushButton(tab_settings);
+        loadConfigButton->setObjectName("loadConfigButton");
 
-        gpsOutputLayout->addWidget(gnssGroundSpeedLabel, 12, 0, 1, 1);
+        configFileLayout->addWidget(loadConfigButton);
 
-        gnssGroundSpeedValueLabel = new QLabel(gpsOutputGroupBox);
-        gnssGroundSpeedValueLabel->setObjectName("gnssGroundSpeedValueLabel");
+        saveConfigButton = new QPushButton(tab_settings);
+        saveConfigButton->setObjectName("saveConfigButton");
 
-        gpsOutputLayout->addWidget(gnssGroundSpeedValueLabel, 12, 1, 1, 1);
+        configFileLayout->addWidget(saveConfigButton);
 
-        gnssTrueHeadingLabel = new QLabel(gpsOutputGroupBox);
-        gnssTrueHeadingLabel->setObjectName("gnssTrueHeadingLabel");
 
-        gpsOutputLayout->addWidget(gnssTrueHeadingLabel, 13, 0, 1, 1);
-
-        gnssTrueHeadingValueLabel = new QLabel(gpsOutputGroupBox);
-        gnssTrueHeadingValueLabel->setObjectName("gnssTrueHeadingValueLabel");
-
-        gpsOutputLayout->addWidget(gnssTrueHeadingValueLabel, 13, 1, 1, 1);
-
-        gnssMagneticHeadingLabel = new QLabel(gpsOutputGroupBox);
-        gnssMagneticHeadingLabel->setObjectName("gnssMagneticHeadingLabel");
-
-        gpsOutputLayout->addWidget(gnssMagneticHeadingLabel, 14, 0, 1, 1);
-
-        gnssMagneticHeadingValueLabel = new QLabel(gpsOutputGroupBox);
-        gnssMagneticHeadingValueLabel->setObjectName("gnssMagneticHeadingValueLabel");
-
-        gpsOutputLayout->addWidget(gnssMagneticHeadingValueLabel, 14, 1, 1, 1);
-
-        gnssSigmaLatLabel = new QLabel(gpsOutputGroupBox);
-        gnssSigmaLatLabel->setObjectName("gnssSigmaLatLabel");
-
-        gpsOutputLayout->addWidget(gnssSigmaLatLabel, 15, 0, 1, 1);
-
-        gnssSigmaLatValueLabel = new QLabel(gpsOutputGroupBox);
-        gnssSigmaLatValueLabel->setObjectName("gnssSigmaLatValueLabel");
-
-        gpsOutputLayout->addWidget(gnssSigmaLatValueLabel, 15, 1, 1, 1);
-
-        gnssSigmaLonLabel = new QLabel(gpsOutputGroupBox);
-        gnssSigmaLonLabel->setObjectName("gnssSigmaLonLabel");
-
-        gpsOutputLayout->addWidget(gnssSigmaLonLabel, 16, 0, 1, 1);
-
-        gnssSigmaLonValueLabel = new QLabel(gpsOutputGroupBox);
-        gnssSigmaLonValueLabel->setObjectName("gnssSigmaLonValueLabel");
-
-        gpsOutputLayout->addWidget(gnssSigmaLonValueLabel, 16, 1, 1, 1);
-
-        gnssSigmaAltLabel = new QLabel(gpsOutputGroupBox);
-        gnssSigmaAltLabel->setObjectName("gnssSigmaAltLabel");
-
-        gpsOutputLayout->addWidget(gnssSigmaAltLabel, 17, 0, 1, 1);
-
-        gnssSigmaAltValueLabel = new QLabel(gpsOutputGroupBox);
-        gnssSigmaAltValueLabel->setObjectName("gnssSigmaAltValueLabel");
-
-        gpsOutputLayout->addWidget(gnssSigmaAltValueLabel, 17, 1, 1, 1);
-
-        gnssSigmaRangeLabel = new QLabel(gpsOutputGroupBox);
-        gnssSigmaRangeLabel->setObjectName("gnssSigmaRangeLabel");
-
-        gpsOutputLayout->addWidget(gnssSigmaRangeLabel, 18, 0, 1, 1);
-
-        gnssSigmaRangeValueLabel = new QLabel(gpsOutputGroupBox);
-        gnssSigmaRangeValueLabel->setObjectName("gnssSigmaRangeValueLabel");
-
-        gpsOutputLayout->addWidget(gnssSigmaRangeValueLabel, 18, 1, 1, 1);
-
-
-        serialOutputLayout->addWidget(gpsOutputGroupBox);
-
-
-        verticalLayout_3->addLayout(serialOutputLayout);
-
-        logDisplayGroupBox = new QGroupBox(tab_settings);
-        logDisplayGroupBox->setObjectName("logDisplayGroupBox");
-        logDisplayLayout = new QVBoxLayout(logDisplayGroupBox);
-        logDisplayLayout->setObjectName("logDisplayLayout");
-        logDisplayTextEdit = new QTextEdit(logDisplayGroupBox);
-        logDisplayTextEdit->setObjectName("logDisplayTextEdit");
-        logDisplayTextEdit->setMinimumSize(QSize(0, 300));
-        logDisplayTextEdit->setReadOnly(true);
-
-        logDisplayLayout->addWidget(logDisplayTextEdit);
-
-
-        verticalLayout_3->addWidget(logDisplayGroupBox);
-
-        logLevelLayout = new QHBoxLayout();
-        logLevelLayout->setObjectName("logLevelLayout");
-        logLevelLabel = new QLabel(tab_settings);
-        logLevelLabel->setObjectName("logLevelLabel");
-
-        logLevelLayout->addWidget(logLevelLabel);
-
-        logLevelComboBox = new QComboBox(tab_settings);
-        logLevelComboBox->addItem(QString());
-        logLevelComboBox->addItem(QString());
-        logLevelComboBox->addItem(QString());
-        logLevelComboBox->addItem(QString());
-        logLevelComboBox->setObjectName("logLevelComboBox");
-
-        logLevelLayout->addWidget(logLevelComboBox);
-
-        horizontalSpacer_3 = new QSpacerItem(40, 20, QSizePolicy::Policy::Expanding, QSizePolicy::Policy::Minimum);
-
-        logLevelLayout->addItem(horizontalSpacer_3);
-
-
-        verticalLayout_3->addLayout(logLevelLayout);
+        verticalLayout_3->addLayout(configFileLayout);
 
         verticalSpacer = new QSpacerItem(20, 40, QSizePolicy::Policy::Minimum, QSizePolicy::Policy::Expanding);
 
@@ -974,175 +788,6 @@ public:
         tab_data->setObjectName("tab_data");
         verticalLayout_4 = new QVBoxLayout(tab_data);
         verticalLayout_4->setObjectName("verticalLayout_4");
-        groupBox = new QGroupBox(tab_data);
-        groupBox->setObjectName("groupBox");
-        formLayout = new QFormLayout(groupBox);
-        formLayout->setObjectName("formLayout");
-        label = new QLabel(groupBox);
-        label->setObjectName("label");
-
-        formLayout->setWidget(0, QFormLayout::ItemRole::LabelRole, label);
-
-        rowSpacingSpinBox = new QDoubleSpinBox(groupBox);
-        rowSpacingSpinBox->setObjectName("rowSpacingSpinBox");
-        rowSpacingSpinBox->setDecimals(1);
-        rowSpacingSpinBox->setMinimum(0.100000000000000);
-        rowSpacingSpinBox->setMaximum(2.000000000000000);
-        rowSpacingSpinBox->setSingleStep(0.100000000000000);
-        rowSpacingSpinBox->setValue(0.300000000000000);
-
-        formLayout->setWidget(0, QFormLayout::ItemRole::FieldRole, rowSpacingSpinBox);
-
-        label_2 = new QLabel(groupBox);
-        label_2->setObjectName("label_2");
-
-        formLayout->setWidget(1, QFormLayout::ItemRole::LabelRole, label_2);
-
-        headlandWidthSpinBox = new QDoubleSpinBox(groupBox);
-        headlandWidthSpinBox->setObjectName("headlandWidthSpinBox");
-        headlandWidthSpinBox->setDecimals(1);
-        headlandWidthSpinBox->setMinimum(1.000000000000000);
-        headlandWidthSpinBox->setMaximum(5.000000000000000);
-        headlandWidthSpinBox->setSingleStep(0.100000000000000);
-        headlandWidthSpinBox->setValue(1.000000000000000);
-
-        formLayout->setWidget(1, QFormLayout::ItemRole::FieldRole, headlandWidthSpinBox);
-
-        label_3 = new QLabel(groupBox);
-        label_3->setObjectName("label_3");
-
-        formLayout->setWidget(2, QFormLayout::ItemRole::LabelRole, label_3);
-
-        rowsPerBlockSpinBox = new QSpinBox(groupBox);
-        rowsPerBlockSpinBox->setObjectName("rowsPerBlockSpinBox");
-        rowsPerBlockSpinBox->setMinimum(1);
-        rowsPerBlockSpinBox->setMaximum(50);
-        rowsPerBlockSpinBox->setValue(10);
-
-        formLayout->setWidget(2, QFormLayout::ItemRole::FieldRole, rowsPerBlockSpinBox);
-
-
-        verticalLayout_4->addWidget(groupBox);
-
-        pathPlanningGroupBox = new QGroupBox(tab_data);
-        pathPlanningGroupBox->setObjectName("pathPlanningGroupBox");
-        pathPlanningFormLayout = new QFormLayout(pathPlanningGroupBox);
-        pathPlanningFormLayout->setObjectName("pathPlanningFormLayout");
-        triggerDistanceLabel = new QLabel(pathPlanningGroupBox);
-        triggerDistanceLabel->setObjectName("triggerDistanceLabel");
-
-        pathPlanningFormLayout->setWidget(0, QFormLayout::ItemRole::LabelRole, triggerDistanceLabel);
-
-        triggerDistanceSpinBox = new QDoubleSpinBox(pathPlanningGroupBox);
-        triggerDistanceSpinBox->setObjectName("triggerDistanceSpinBox");
-        triggerDistanceSpinBox->setDecimals(1);
-        triggerDistanceSpinBox->setMinimum(0.100000000000000);
-        triggerDistanceSpinBox->setMaximum(5.000000000000000);
-        triggerDistanceSpinBox->setSingleStep(0.100000000000000);
-        triggerDistanceSpinBox->setValue(1.000000000000000);
-
-        pathPlanningFormLayout->setWidget(0, QFormLayout::ItemRole::FieldRole, triggerDistanceSpinBox);
-
-        safetyMarginLabel = new QLabel(pathPlanningGroupBox);
-        safetyMarginLabel->setObjectName("safetyMarginLabel");
-
-        pathPlanningFormLayout->setWidget(1, QFormLayout::ItemRole::LabelRole, safetyMarginLabel);
-
-        safetyMarginSpinBox = new QDoubleSpinBox(pathPlanningGroupBox);
-        safetyMarginSpinBox->setObjectName("safetyMarginSpinBox");
-        safetyMarginSpinBox->setDecimals(1);
-        safetyMarginSpinBox->setMinimum(0.100000000000000);
-        safetyMarginSpinBox->setMaximum(2.000000000000000);
-        safetyMarginSpinBox->setSingleStep(0.100000000000000);
-        safetyMarginSpinBox->setValue(0.500000000000000);
-
-        pathPlanningFormLayout->setWidget(1, QFormLayout::ItemRole::FieldRole, safetyMarginSpinBox);
-
-        fieldLengthLabel = new QLabel(pathPlanningGroupBox);
-        fieldLengthLabel->setObjectName("fieldLengthLabel");
-
-        pathPlanningFormLayout->setWidget(2, QFormLayout::ItemRole::LabelRole, fieldLengthLabel);
-
-        fieldLengthSpinBox = new QDoubleSpinBox(pathPlanningGroupBox);
-        fieldLengthSpinBox->setObjectName("fieldLengthSpinBox");
-        fieldLengthSpinBox->setDecimals(0);
-        fieldLengthSpinBox->setMinimum(10.000000000000000);
-        fieldLengthSpinBox->setMaximum(1000.000000000000000);
-        fieldLengthSpinBox->setSingleStep(10.000000000000000);
-        fieldLengthSpinBox->setValue(100.000000000000000);
-
-        pathPlanningFormLayout->setWidget(2, QFormLayout::ItemRole::FieldRole, fieldLengthSpinBox);
-
-        advanceDistanceLabel = new QLabel(pathPlanningGroupBox);
-        advanceDistanceLabel->setObjectName("advanceDistanceLabel");
-
-        pathPlanningFormLayout->setWidget(3, QFormLayout::ItemRole::LabelRole, advanceDistanceLabel);
-
-        advanceDistanceSpinBox = new QDoubleSpinBox(pathPlanningGroupBox);
-        advanceDistanceSpinBox->setObjectName("advanceDistanceSpinBox");
-        advanceDistanceSpinBox->setDecimals(1);
-        advanceDistanceSpinBox->setMinimum(0.000000000000000);
-        advanceDistanceSpinBox->setMaximum(5.000000000000000);
-        advanceDistanceSpinBox->setSingleStep(0.100000000000000);
-        advanceDistanceSpinBox->setValue(0.500000000000000);
-
-        pathPlanningFormLayout->setWidget(3, QFormLayout::ItemRole::FieldRole, advanceDistanceSpinBox);
-
-
-        verticalLayout_4->addWidget(pathPlanningGroupBox);
-
-        groupBox_2 = new QGroupBox(tab_data);
-        groupBox_2->setObjectName("groupBox_2");
-        formLayout_2 = new QFormLayout(groupBox_2);
-        formLayout_2->setObjectName("formLayout_2");
-        label_4 = new QLabel(groupBox_2);
-        label_4->setObjectName("label_4");
-
-        formLayout_2->setWidget(0, QFormLayout::ItemRole::LabelRole, label_4);
-
-        delaySpinBox = new QDoubleSpinBox(groupBox_2);
-        delaySpinBox->setObjectName("delaySpinBox");
-        delaySpinBox->setDecimals(3);
-        delaySpinBox->setMinimum(0.000000000000000);
-        delaySpinBox->setMaximum(1.000000000000000);
-        delaySpinBox->setSingleStep(0.010000000000000);
-        delaySpinBox->setValue(0.300000000000000);
-
-        formLayout_2->setWidget(0, QFormLayout::ItemRole::FieldRole, delaySpinBox);
-
-        label_5 = new QLabel(groupBox_2);
-        label_5->setObjectName("label_5");
-
-        formLayout_2->setWidget(1, QFormLayout::ItemRole::LabelRole, label_5);
-
-        hysteresisSpinBox = new QDoubleSpinBox(groupBox_2);
-        hysteresisSpinBox->setObjectName("hysteresisSpinBox");
-        hysteresisSpinBox->setDecimals(2);
-        hysteresisSpinBox->setMinimum(0.000000000000000);
-        hysteresisSpinBox->setMaximum(0.100000000000000);
-        hysteresisSpinBox->setSingleStep(0.010000000000000);
-        hysteresisSpinBox->setValue(0.020000000000000);
-
-        formLayout_2->setWidget(1, QFormLayout::ItemRole::FieldRole, hysteresisSpinBox);
-
-
-        verticalLayout_4->addWidget(groupBox_2);
-
-        configFileLayout = new QHBoxLayout();
-        configFileLayout->setObjectName("configFileLayout");
-        loadConfigButton = new QPushButton(tab_data);
-        loadConfigButton->setObjectName("loadConfigButton");
-
-        configFileLayout->addWidget(loadConfigButton);
-
-        saveConfigButton = new QPushButton(tab_data);
-        saveConfigButton->setObjectName("saveConfigButton");
-
-        configFileLayout->addWidget(saveConfigButton);
-
-
-        verticalLayout_4->addLayout(configFileLayout);
-
         databaseGroupBox = new QGroupBox(tab_data);
         databaseGroupBox->setObjectName("databaseGroupBox");
         databaseLayout = new QVBoxLayout(databaseGroupBox);
@@ -1160,69 +805,255 @@ public:
 
         verticalLayout_4->addWidget(databaseGroupBox);
 
-        historyGroupBox = new QGroupBox(tab_data);
-        historyGroupBox->setObjectName("historyGroupBox");
-        historyLayout = new QVBoxLayout(historyGroupBox);
-        historyLayout->setObjectName("historyLayout");
-        historyListWidget = new QListWidget(historyGroupBox);
-        historyListWidget->setObjectName("historyListWidget");
-        historyListWidget->setMinimumSize(QSize(0, 150));
-
-        historyLayout->addWidget(historyListWidget);
-
-        jobInfoGroupBox = new QGroupBox(historyGroupBox);
+        jobInfoGroupBox = new QGroupBox(tab_data);
         jobInfoGroupBox->setObjectName("jobInfoGroupBox");
-        jobInfoLayout = new QFormLayout(jobInfoGroupBox);
+        jobInfoLayout = new QHBoxLayout(jobInfoGroupBox);
         jobInfoLayout->setObjectName("jobInfoLayout");
         jobIdLabel = new QLabel(jobInfoGroupBox);
         jobIdLabel->setObjectName("jobIdLabel");
 
-        jobInfoLayout->setWidget(0, QFormLayout::ItemRole::LabelRole, jobIdLabel);
+        jobInfoLayout->addWidget(jobIdLabel);
 
         jobIdValueLabel = new QLabel(jobInfoGroupBox);
         jobIdValueLabel->setObjectName("jobIdValueLabel");
 
-        jobInfoLayout->setWidget(0, QFormLayout::ItemRole::FieldRole, jobIdValueLabel);
+        jobInfoLayout->addWidget(jobIdValueLabel);
+
+        horizontalSpacer_4 = new QSpacerItem(20, 1, QSizePolicy::Policy::Expanding, QSizePolicy::Policy::Minimum);
+
+        jobInfoLayout->addItem(horizontalSpacer_4);
 
         jobDateLabel = new QLabel(jobInfoGroupBox);
         jobDateLabel->setObjectName("jobDateLabel");
 
-        jobInfoLayout->setWidget(1, QFormLayout::ItemRole::LabelRole, jobDateLabel);
+        jobInfoLayout->addWidget(jobDateLabel);
 
         jobDateValueLabel = new QLabel(jobInfoGroupBox);
         jobDateValueLabel->setObjectName("jobDateValueLabel");
 
-        jobInfoLayout->setWidget(1, QFormLayout::ItemRole::FieldRole, jobDateValueLabel);
+        jobInfoLayout->addWidget(jobDateValueLabel);
+
+        horizontalSpacer_5 = new QSpacerItem(20, 1, QSizePolicy::Policy::Expanding, QSizePolicy::Policy::Minimum);
+
+        jobInfoLayout->addItem(horizontalSpacer_5);
 
         jobAreaLabel = new QLabel(jobInfoGroupBox);
         jobAreaLabel->setObjectName("jobAreaLabel");
 
-        jobInfoLayout->setWidget(2, QFormLayout::ItemRole::LabelRole, jobAreaLabel);
+        jobInfoLayout->addWidget(jobAreaLabel);
 
         jobAreaValueLabel = new QLabel(jobInfoGroupBox);
         jobAreaValueLabel->setObjectName("jobAreaValueLabel");
 
-        jobInfoLayout->setWidget(2, QFormLayout::ItemRole::FieldRole, jobAreaValueLabel);
+        jobInfoLayout->addWidget(jobAreaValueLabel);
+
+        horizontalSpacer_6 = new QSpacerItem(20, 1, QSizePolicy::Policy::Expanding, QSizePolicy::Policy::Minimum);
+
+        jobInfoLayout->addItem(horizontalSpacer_6);
 
         jobSeedlingsLabel = new QLabel(jobInfoGroupBox);
         jobSeedlingsLabel->setObjectName("jobSeedlingsLabel");
 
-        jobInfoLayout->setWidget(3, QFormLayout::ItemRole::LabelRole, jobSeedlingsLabel);
+        jobInfoLayout->addWidget(jobSeedlingsLabel);
 
         jobSeedlingsValueLabel = new QLabel(jobInfoGroupBox);
         jobSeedlingsValueLabel->setObjectName("jobSeedlingsValueLabel");
 
-        jobInfoLayout->setWidget(3, QFormLayout::ItemRole::FieldRole, jobSeedlingsValueLabel);
+        jobInfoLayout->addWidget(jobSeedlingsValueLabel);
+
+        horizontalSpacer_7 = new QSpacerItem(40, 1, QSizePolicy::Policy::Expanding, QSizePolicy::Policy::Minimum);
+
+        jobInfoLayout->addItem(horizontalSpacer_7);
 
 
-        historyLayout->addWidget(jobInfoGroupBox);
+        verticalLayout_4->addWidget(jobInfoGroupBox);
+
+        operationControlGroupBox = new QGroupBox(tab_data);
+        operationControlGroupBox->setObjectName("operationControlGroupBox");
+        operationControlLayout = new QVBoxLayout(operationControlGroupBox);
+        operationControlLayout->setObjectName("operationControlLayout");
+        seedingStatusLayout = new QHBoxLayout();
+        seedingStatusLayout->setObjectName("seedingStatusLayout");
+        seedingStatusLabel = new QLabel(operationControlGroupBox);
+        seedingStatusLabel->setObjectName("seedingStatusLabel");
+
+        seedingStatusLayout->addWidget(seedingStatusLabel);
+
+        seedingStatusIndicator = new QLabel(operationControlGroupBox);
+        seedingStatusIndicator->setObjectName("seedingStatusIndicator");
+
+        seedingStatusLayout->addWidget(seedingStatusIndicator);
+
+        horizontalSpacer = new QSpacerItem(40, 1, QSizePolicy::Policy::Expanding, QSizePolicy::Policy::Minimum);
+
+        seedingStatusLayout->addItem(horizontalSpacer);
 
 
-        verticalLayout_4->addWidget(historyGroupBox);
+        operationControlLayout->addLayout(seedingStatusLayout);
+
+        fieldListWidget = new QListWidget(operationControlGroupBox);
+        fieldListWidget->setObjectName("fieldListWidget");
+        fieldListWidget->setMinimumSize(QSize(0, 50));
+
+        operationControlLayout->addWidget(fieldListWidget);
+
+        controlDataGridLayout = new QGridLayout();
+        controlDataGridLayout->setObjectName("controlDataGridLayout");
+        pathPlanningLabel = new QLabel(operationControlGroupBox);
+        pathPlanningLabel->setObjectName("pathPlanningLabel");
+
+        controlDataGridLayout->addWidget(pathPlanningLabel, 0, 0, 1, 1);
+
+        currentSectionLabel = new QLabel(operationControlGroupBox);
+        currentSectionLabel->setObjectName("currentSectionLabel");
+
+        controlDataGridLayout->addWidget(currentSectionLabel, 0, 1, 1, 1);
+
+        targetPointLabel = new QLabel(operationControlGroupBox);
+        targetPointLabel->setObjectName("targetPointLabel");
+
+        controlDataGridLayout->addWidget(targetPointLabel, 1, 1, 1, 1);
+
+        triggerPointLabel = new QLabel(operationControlGroupBox);
+        triggerPointLabel->setObjectName("triggerPointLabel");
+
+        controlDataGridLayout->addWidget(triggerPointLabel, 2, 1, 1, 1);
+
+        operationDataLabel = new QLabel(operationControlGroupBox);
+        operationDataLabel->setObjectName("operationDataLabel");
+
+        controlDataGridLayout->addWidget(operationDataLabel, 0, 2, 1, 1);
+
+        seedlingsCountLabel = new QLabel(operationControlGroupBox);
+        seedlingsCountLabel->setObjectName("seedlingsCountLabel");
+
+        controlDataGridLayout->addWidget(seedlingsCountLabel, 1, 2, 1, 1);
+
+        operationProgressLabel = new QLabel(operationControlGroupBox);
+        operationProgressLabel->setObjectName("operationProgressLabel");
+
+        controlDataGridLayout->addWidget(operationProgressLabel, 2, 2, 1, 1);
+
+
+        operationControlLayout->addLayout(controlDataGridLayout);
+
+
+        verticalLayout_4->addWidget(operationControlGroupBox);
+
+        horizontalLayout_2 = new QHBoxLayout();
+        horizontalLayout_2->setObjectName("horizontalLayout_2");
+        startButton = new QPushButton(tab_data);
+        startButton->setObjectName("startButton");
+
+        horizontalLayout_2->addWidget(startButton);
+
+        stopButton = new QPushButton(tab_data);
+        stopButton->setObjectName("stopButton");
+
+        horizontalLayout_2->addWidget(stopButton);
+
+        configButton = new QPushButton(tab_data);
+        configButton->setObjectName("configButton");
+
+        horizontalLayout_2->addWidget(configButton);
+
+
+        verticalLayout_4->addLayout(horizontalLayout_2);
 
         tabWidget->addTab(tab_data, QString());
 
         verticalLayout->addWidget(tabWidget);
+
+        timeAndSensorGroupBox = new QGroupBox(centralwidget);
+        timeAndSensorGroupBox->setObjectName("timeAndSensorGroupBox");
+        timeAndSensorLayout = new QVBoxLayout(timeAndSensorGroupBox);
+        timeAndSensorLayout->setObjectName("timeAndSensorLayout");
+        timeAndSensorTopLayout = new QHBoxLayout();
+        timeAndSensorTopLayout->setObjectName("timeAndSensorTopLayout");
+        timeLabel = new QLabel(timeAndSensorGroupBox);
+        timeLabel->setObjectName("timeLabel");
+
+        timeAndSensorTopLayout->addWidget(timeLabel);
+
+        localTimeLabel = new QLabel(timeAndSensorGroupBox);
+        localTimeLabel->setObjectName("localTimeLabel");
+
+        timeAndSensorTopLayout->addWidget(localTimeLabel);
+
+        horizontalSpacer_2 = new QSpacerItem(20, 1, QSizePolicy::Policy::Expanding, QSizePolicy::Policy::Minimum);
+
+        timeAndSensorTopLayout->addItem(horizontalSpacer_2);
+
+        gpsTimeLabel = new QLabel(timeAndSensorGroupBox);
+        gpsTimeLabel->setObjectName("gpsTimeLabel");
+
+        timeAndSensorTopLayout->addWidget(gpsTimeLabel);
+
+        gpsTimeValueLabel = new QLabel(timeAndSensorGroupBox);
+        gpsTimeValueLabel->setObjectName("gpsTimeValueLabel");
+
+        timeAndSensorTopLayout->addWidget(gpsTimeValueLabel);
+
+        horizontalSpacer_8 = new QSpacerItem(40, 1, QSizePolicy::Policy::Expanding, QSizePolicy::Policy::Minimum);
+
+        timeAndSensorTopLayout->addItem(horizontalSpacer_8);
+
+
+        timeAndSensorLayout->addLayout(timeAndSensorTopLayout);
+
+        sensorDataGridLayout = new QGridLayout();
+        sensorDataGridLayout->setSpacing(5);
+        sensorDataGridLayout->setObjectName("sensorDataGridLayout");
+        imuAccelerationLabel = new QLabel(timeAndSensorGroupBox);
+        imuAccelerationLabel->setObjectName("imuAccelerationLabel");
+
+        sensorDataGridLayout->addWidget(imuAccelerationLabel, 0, 0, 1, 1);
+
+        gpsPositionLabel = new QLabel(timeAndSensorGroupBox);
+        gpsPositionLabel->setObjectName("gpsPositionLabel");
+
+        sensorDataGridLayout->addWidget(gpsPositionLabel, 0, 1, 1, 1);
+
+        imuDthetaLabel = new QLabel(timeAndSensorGroupBox);
+        imuDthetaLabel->setObjectName("imuDthetaLabel");
+
+        sensorDataGridLayout->addWidget(imuDthetaLabel, 1, 0, 1, 1);
+
+        speedLabel = new QLabel(timeAndSensorGroupBox);
+        speedLabel->setObjectName("speedLabel");
+
+        sensorDataGridLayout->addWidget(speedLabel, 1, 1, 1, 1);
+
+        imuOutputMagneticHeadingLabel = new QLabel(timeAndSensorGroupBox);
+        imuOutputMagneticHeadingLabel->setObjectName("imuOutputMagneticHeadingLabel");
+
+        sensorDataGridLayout->addWidget(imuOutputMagneticHeadingLabel, 2, 0, 1, 1);
+
+        magneticHeadingLabel = new QLabel(timeAndSensorGroupBox);
+        magneticHeadingLabel->setObjectName("magneticHeadingLabel");
+
+        sensorDataGridLayout->addWidget(magneticHeadingLabel, 2, 1, 1, 1);
+
+        imuAngleDisplayLabel = new QLabel(timeAndSensorGroupBox);
+        imuAngleDisplayLabel->setObjectName("imuAngleDisplayLabel");
+
+        sensorDataGridLayout->addWidget(imuAngleDisplayLabel, 3, 0, 1, 1);
+
+        imuDataCountLabel = new QLabel(timeAndSensorGroupBox);
+        imuDataCountLabel->setObjectName("imuDataCountLabel");
+
+        sensorDataGridLayout->addWidget(imuDataCountLabel, 4, 0, 1, 1);
+
+        gpsDataCountLabel = new QLabel(timeAndSensorGroupBox);
+        gpsDataCountLabel->setObjectName("gpsDataCountLabel");
+
+        sensorDataGridLayout->addWidget(gpsDataCountLabel, 4, 1, 1, 1);
+
+
+        timeAndSensorLayout->addLayout(sensorDataGridLayout);
+
+
+        verticalLayout->addWidget(timeAndSensorGroupBox);
 
         MainWindow->setCentralWidget(centralwidget);
         menubar = new QMenuBar(MainWindow);
@@ -1274,35 +1105,6 @@ public:
         actionCopy->setText(QCoreApplication::translate("MainWindow", "\345\244\215\345\210\266", nullptr));
         actionPaste->setText(QCoreApplication::translate("MainWindow", "\347\262\230\350\264\264", nullptr));
         actionAbout->setText(QCoreApplication::translate("MainWindow", "\345\205\263\344\272\216", nullptr));
-        mapTypeLabel->setText(QCoreApplication::translate("MainWindow", "\345\234\260\345\233\276\347\261\273\345\236\213:", nullptr));
-        dataSourceLabel->setText(QCoreApplication::translate("MainWindow", "\346\225\260\346\215\256\346\272\220:", nullptr));
-        calibrateDataButton->setText(QCoreApplication::translate("MainWindow", "\346\225\260\346\215\256\346\240\241\345\207\206", nullptr));
-        timeLabel->setText(QCoreApplication::translate("MainWindow", "\346\234\254\345\234\260\346\227\266\351\227\264:", nullptr));
-        localTimeLabel->setText(QCoreApplication::translate("MainWindow", "2024-01-01 00:00:00", nullptr));
-        sensorDataGroupBox->setTitle(QCoreApplication::translate("MainWindow", "\344\274\240\346\204\237\345\231\250\346\225\260\346\215\256", nullptr));
-        imuDataLabel->setText(QCoreApplication::translate("MainWindow", "IMU\346\225\260\346\215\256:", nullptr));
-        imuTimeLabel->setText(QCoreApplication::translate("MainWindow", "\346\227\266\351\227\264: ", nullptr));
-        imuAccLabel->setText(QCoreApplication::translate("MainWindow", "\345\212\240\351\200\237\345\272\246: (0.00, 0.00, 0.00) m/s\302\262", nullptr));
-        imuGyroLabel->setText(QCoreApplication::translate("MainWindow", "\350\247\222\351\200\237\345\272\246: (0.00, 0.00, 0.00) rad/s", nullptr));
-        imuAngleLabel->setText(QCoreApplication::translate("MainWindow", "\350\247\222\345\272\246: (0.00, 0.00, 0.00) \302\260", nullptr));
-        imuMagneticHeadingLabel->setText(QCoreApplication::translate("MainWindow", "\347\243\201\346\226\271\344\275\215\350\247\222: 0.00 \302\260", nullptr));
-        gpsDataLabel->setText(QCoreApplication::translate("MainWindow", "GPS\346\225\260\346\215\256:", nullptr));
-        gpsTimeLabel->setText(QCoreApplication::translate("MainWindow", "\346\227\266\351\227\264: ", nullptr));
-        gpsPositionLabel->setText(QCoreApplication::translate("MainWindow", "\347\273\217\347\272\254\345\272\246: (0.000000, 0.000000)", nullptr));
-        gpsAltSpeedLabel->setText(QCoreApplication::translate("MainWindow", "\351\253\230\345\272\246: 0.00 m, \351\200\237\345\272\246: 0.00 m/s", nullptr));
-        operationControlGroupBox->setTitle(QCoreApplication::translate("MainWindow", "\344\275\234\344\270\232\346\216\247\345\210\266", nullptr));
-        seedingStatusLabel->setText(QCoreApplication::translate("MainWindow", "\346\222\255\347\247\215\347\212\266\346\200\201:", nullptr));
-        seedingStatusIndicator->setText(QCoreApplication::translate("MainWindow", "\360\237\224\264 \346\234\252\346\222\255\347\247\215", nullptr));
-        pathPlanningLabel->setText(QCoreApplication::translate("MainWindow", "\350\267\257\345\276\204\350\247\204\345\210\222:", nullptr));
-        currentSectionLabel->setText(QCoreApplication::translate("MainWindow", "\345\275\223\345\211\215\345\214\272\351\227\264: 0", nullptr));
-        targetPointLabel->setText(QCoreApplication::translate("MainWindow", "\347\233\256\346\240\207\347\202\271: (0.00, 0.00)", nullptr));
-        triggerPointLabel->setText(QCoreApplication::translate("MainWindow", "\350\247\246\345\217\221\347\202\271: (0.00, 0.00)", nullptr));
-        operationDataLabel->setText(QCoreApplication::translate("MainWindow", "\344\275\234\344\270\232\346\225\260\346\215\256:", nullptr));
-        seedlingsCountLabel->setText(QCoreApplication::translate("MainWindow", "Seedlings: 0", nullptr));
-        operationProgressLabel->setText(QCoreApplication::translate("MainWindow", "\350\277\233\345\272\246: 0%", nullptr));
-        startButton->setText(QCoreApplication::translate("MainWindow", "\345\274\200\345\247\213", nullptr));
-        stopButton->setText(QCoreApplication::translate("MainWindow", "\345\201\234\346\255\242", nullptr));
-        configButton->setText(QCoreApplication::translate("MainWindow", "\351\205\215\347\275\256", nullptr));
         tabWidget->setTabText(tabWidget->indexOf(tab_navigation), QCoreApplication::translate("MainWindow", "\344\270\273\347\252\227\345\217\243", nullptr));
         deviceStatusGroupBox->setTitle(QCoreApplication::translate("MainWindow", "\350\256\276\345\244\207\347\212\266\346\200\201", nullptr));
         imuStatusLabel->setText(QCoreApplication::translate("MainWindow", "IMU\347\212\266\346\200\201: \342\232\252 \346\234\252\350\277\236\346\216\245", nullptr));
@@ -1311,6 +1113,9 @@ public:
         gpsStatusLabel->setText(QCoreApplication::translate("MainWindow", "GPS\347\212\266\346\200\201: \342\232\252 \346\234\252\350\277\236\346\216\245", nullptr));
         gpsConnectButton->setText(QCoreApplication::translate("MainWindow", "\345\274\200\345\220\257", nullptr));
         gpsDisconnectButton->setText(QCoreApplication::translate("MainWindow", "\345\205\263\351\227\255", nullptr));
+        plcStatusLabel->setText(QCoreApplication::translate("MainWindow", "PLC\347\212\266\346\200\201: \342\232\252 \346\234\252\350\277\236\346\216\245", nullptr));
+        plcConnectButton->setText(QCoreApplication::translate("MainWindow", "\344\277\235\345\255\230", nullptr));
+        plcDisconnectButton->setText(QCoreApplication::translate("MainWindow", "\346\265\213\350\257\225", nullptr));
         imuSettingsGroupBox->setTitle(QCoreApplication::translate("MainWindow", "IMU\345\217\202\346\225\260\350\256\276\347\275\256", nullptr));
         imuPortLabel->setText(QCoreApplication::translate("MainWindow", "\344\270\262\345\217\243\345\217\267:", nullptr));
         imuPortComboBox->setItemText(0, QCoreApplication::translate("MainWindow", "COM1", nullptr));
@@ -1325,7 +1130,7 @@ public:
         imuBaudComboBox->setItemText(3, QCoreApplication::translate("MainWindow", "57600", nullptr));
         imuBaudComboBox->setItemText(4, QCoreApplication::translate("MainWindow", "115200", nullptr));
 
-        imuConfigLabel->setText(QCoreApplication::translate("MainWindow", "IMU\351\205\215\347\275\256: \346\234\252\350\257\273\345\217\226", nullptr));
+        imuConfigLabel->setText(QCoreApplication::translate("MainWindow", "IMU\346\234\211\346\225\210\346\225\260\346\215\256\350\256\241\346\225\260: 0", nullptr));
         gpsSettingsGroupBox->setTitle(QCoreApplication::translate("MainWindow", "GPS\345\217\202\346\225\260\350\256\276\347\275\256", nullptr));
         gpsPortLabel->setText(QCoreApplication::translate("MainWindow", "\344\270\262\345\217\243\345\217\267:", nullptr));
         gpsPortComboBox->setItemText(0, QCoreApplication::translate("MainWindow", "COM1", nullptr));
@@ -1340,102 +1145,82 @@ public:
         gpsBaudComboBox->setItemText(3, QCoreApplication::translate("MainWindow", "57600", nullptr));
         gpsBaudComboBox->setItemText(4, QCoreApplication::translate("MainWindow", "115200", nullptr));
 
-        gpsConfigLabel->setText(QCoreApplication::translate("MainWindow", "GPS\351\205\215\347\275\256: \346\234\252\350\257\273\345\217\226", nullptr));
-        imuOutputGroupBox->setTitle(QCoreApplication::translate("MainWindow", "IMU\346\225\260\346\215\256", nullptr));
-        imuTimeLabel1->setText(QCoreApplication::translate("MainWindow", "\346\227\266\351\227\264: ", nullptr));
-        imuTimeValueLabel->setText(QString());
-        imuDtLabel->setText(QCoreApplication::translate("MainWindow", "\346\227\266\351\227\264\351\227\264\351\232\224: ", nullptr));
-        imuDtValueLabel->setText(QString());
-        imuDthetaLabel->setText(QCoreApplication::translate("MainWindow", "\350\247\222\351\200\237\345\272\246\345\242\236\351\207\217: ", nullptr));
-        imuDthetaValueLabel->setText(QString());
-        imuDvelLabel->setText(QCoreApplication::translate("MainWindow", "\351\200\237\345\272\246\345\242\236\351\207\217: ", nullptr));
-        imuDvelValueLabel->setText(QString());
-        imuOdovelLabel->setText(QCoreApplication::translate("MainWindow", "\351\207\214\347\250\213\350\256\241\351\200\237\345\272\246: ", nullptr));
-        imuOdovelValueLabel->setText(QString());
-        imuMagneticFieldLabel->setText(QCoreApplication::translate("MainWindow", "\347\243\201\345\234\272: ", nullptr));
-        imuMagneticFieldValueLabel->setText(QString());
-        imuTemperatureLabel->setText(QCoreApplication::translate("MainWindow", "\346\270\251\345\272\246: ", nullptr));
-        imuTemperatureValueLabel->setText(QString());
-        imuOutputMagneticHeadingLabel->setText(QCoreApplication::translate("MainWindow", "\347\243\201\350\210\252\345\220\221: ", nullptr));
-        imuOutputMagneticHeadingValueLabel->setText(QString());
-        imuTrueHeadingLabel->setText(QCoreApplication::translate("MainWindow", "\347\234\237\350\210\252\345\220\221: ", nullptr));
-        imuTrueHeadingValueLabel->setText(QString());
-        gpsOutputGroupBox->setTitle(QCoreApplication::translate("MainWindow", "GNSS\346\225\260\346\215\256", nullptr));
-        gnssTimeLabel->setText(QCoreApplication::translate("MainWindow", "\346\227\266\351\227\264: ", nullptr));
-        gnssTimeValueLabel->setText(QString());
-        gnssPositionLabel->setText(QCoreApplication::translate("MainWindow", "\344\275\215\347\275\256: ", nullptr));
-        gnssPositionValueLabel->setText(QString());
-        gnssVelocityLabel->setText(QCoreApplication::translate("MainWindow", "\351\200\237\345\272\246: ", nullptr));
-        gnssVelocityValueLabel->setText(QString());
-        gnssStdLabel->setText(QCoreApplication::translate("MainWindow", "\346\240\207\345\207\206\345\267\256: ", nullptr));
-        gnssStdValueLabel->setText(QString());
-        gnssValidLabel->setText(QCoreApplication::translate("MainWindow", "\346\234\211\346\225\210: ", nullptr));
-        gnssValidValueLabel->setText(QString());
-        gnssQualityLabel->setText(QCoreApplication::translate("MainWindow", "\350\264\250\351\207\217: ", nullptr));
-        gnssQualityValueLabel->setText(QString());
-        gnssFixModeLabel->setText(QCoreApplication::translate("MainWindow", "\345\256\232\344\275\215\346\250\241\345\274\217: ", nullptr));
-        gnssFixModeValueLabel->setText(QString());
-        gnssHdopLabel->setText(QCoreApplication::translate("MainWindow", "HDOP: ", nullptr));
-        gnssHdopValueLabel->setText(QString());
-        gnssVdopLabel->setText(QCoreApplication::translate("MainWindow", "VDOP: ", nullptr));
-        gnssVdopValueLabel->setText(QString());
-        gnssPdopLabel->setText(QCoreApplication::translate("MainWindow", "PDOP: ", nullptr));
-        gnssPdopValueLabel->setText(QString());
-        gnssVisibleSvLabel->setText(QCoreApplication::translate("MainWindow", "\345\217\257\350\247\201\345\215\253\346\230\237: ", nullptr));
-        gnssVisibleSvValueLabel->setText(QString());
-        gnssUsedSvLabel->setText(QCoreApplication::translate("MainWindow", "\344\275\277\347\224\250\345\215\253\346\230\237: ", nullptr));
-        gnssUsedSvValueLabel->setText(QString());
-        gnssGroundSpeedLabel->setText(QCoreApplication::translate("MainWindow", "\345\234\260\351\235\242\351\200\237\345\272\246: ", nullptr));
-        gnssGroundSpeedValueLabel->setText(QString());
-        gnssTrueHeadingLabel->setText(QCoreApplication::translate("MainWindow", "\347\234\237\350\210\252\345\220\221: ", nullptr));
-        gnssTrueHeadingValueLabel->setText(QString());
-        gnssMagneticHeadingLabel->setText(QCoreApplication::translate("MainWindow", "\347\243\201\350\210\252\345\220\221: ", nullptr));
-        gnssMagneticHeadingValueLabel->setText(QString());
-        gnssSigmaLatLabel->setText(QCoreApplication::translate("MainWindow", "\347\272\254\345\272\246\346\240\207\345\207\206\345\267\256: ", nullptr));
-        gnssSigmaLatValueLabel->setText(QString());
-        gnssSigmaLonLabel->setText(QCoreApplication::translate("MainWindow", "\347\273\217\345\272\246\346\240\207\345\207\206\345\267\256: ", nullptr));
-        gnssSigmaLonValueLabel->setText(QString());
-        gnssSigmaAltLabel->setText(QCoreApplication::translate("MainWindow", "\351\253\230\345\272\246\346\240\207\345\207\206\345\267\256: ", nullptr));
-        gnssSigmaAltValueLabel->setText(QString());
-        gnssSigmaRangeLabel->setText(QCoreApplication::translate("MainWindow", "\344\274\252\350\267\235\346\240\207\345\207\206\345\267\256: ", nullptr));
-        gnssSigmaRangeValueLabel->setText(QString());
-        logDisplayGroupBox->setTitle(QCoreApplication::translate("MainWindow", "\346\227\245\345\277\227\346\230\276\347\244\272", nullptr));
-        logDisplayTextEdit->setPlainText(QCoreApplication::translate("MainWindow", "\346\227\245\345\277\227\346\230\276\347\244\272\345\214\272\345\237\237", nullptr));
-        logLevelLabel->setText(QCoreApplication::translate("MainWindow", "\346\227\245\345\277\227\347\272\247\345\210\253:", nullptr));
-        logLevelComboBox->setItemText(0, QCoreApplication::translate("MainWindow", "DEBUG", nullptr));
-        logLevelComboBox->setItemText(1, QCoreApplication::translate("MainWindow", "INFO", nullptr));
-        logLevelComboBox->setItemText(2, QCoreApplication::translate("MainWindow", "WARN", nullptr));
-        logLevelComboBox->setItemText(3, QCoreApplication::translate("MainWindow", "ERROR", nullptr));
-
-        tabWidget->setTabText(tabWidget->indexOf(tab_settings), QCoreApplication::translate("MainWindow", "\351\205\215\347\275\256\347\252\227\345\217\243", nullptr));
-        groupBox->setTitle(QCoreApplication::translate("MainWindow", "\347\224\260\345\235\227\345\217\202\346\225\260", nullptr));
-        label->setText(QCoreApplication::translate("MainWindow", "\350\241\214\350\267\235 (m):", nullptr));
-        label_2->setText(QCoreApplication::translate("MainWindow", "\350\277\207\351\201\223\345\256\275\345\272\246 (m):", nullptr));
-        label_3->setText(QCoreApplication::translate("MainWindow", "\346\257\217\345\235\227\350\241\214\346\225\260:", nullptr));
-        pathPlanningGroupBox->setTitle(QCoreApplication::translate("MainWindow", "\350\267\257\345\276\204\350\247\204\345\210\222\345\217\202\346\225\260", nullptr));
-        triggerDistanceLabel->setText(QCoreApplication::translate("MainWindow", "\350\247\246\345\217\221\347\202\271\350\267\235\347\246\273 (m):", nullptr));
-        safetyMarginLabel->setText(QCoreApplication::translate("MainWindow", "\345\256\211\345\205\250\344\275\231\351\207\217 (m):", nullptr));
+        gpsConfigLabel->setText(QCoreApplication::translate("MainWindow", "GPS\346\234\211\346\225\210\346\225\260\346\215\256\350\256\241\346\225\260: 0", nullptr));
+        plcSettingsGroupBox->setTitle(QCoreApplication::translate("MainWindow", "PLC\345\217\202\346\225\260\350\256\276\347\275\256", nullptr));
+        plcPortLabel->setText(QCoreApplication::translate("MainWindow", "\345\234\260\345\235\200:", nullptr));
+        plcIpLineEdit->setText(QCoreApplication::translate("MainWindow", "127.0.0.1", nullptr));
+        plcBaudLabel->setText(QCoreApplication::translate("MainWindow", "\347\253\257\345\217\243:", nullptr));
+        plcPortLineEdit->setText(QCoreApplication::translate("MainWindow", "502", nullptr));
+        plcConfigLabel->setText(QCoreApplication::translate("MainWindow", "PLC\345\217\221\351\200\201\350\256\241\346\225\260: 0, \346\216\245\346\224\266\350\256\241\346\225\260: 0", nullptr));
+        plcGroupBox->setTitle(QCoreApplication::translate("MainWindow", "PLC\346\225\260\346\215\256", nullptr));
+        plcInputGroupBox->setTitle(QCoreApplication::translate("MainWindow", "\350\257\273\345\217\226\346\225\260\346\215\256", nullptr));
+        plcInputDataLabel->setText(QCoreApplication::translate("MainWindow", "\346\227\240\346\225\260\346\215\256", nullptr));
+        plcOutputGroupBox->setTitle(QCoreApplication::translate("MainWindow", "\345\217\221\351\200\201\346\214\207\344\273\244", nullptr));
+        plcCommandTextEdit->setPlainText(QString());
+        plcSendButton->setText(QCoreApplication::translate("MainWindow", "\345\217\221\351\200\201", nullptr));
+        coordinateSystemGroupBox->setTitle(QCoreApplication::translate("MainWindow", "\345\235\220\346\240\207\347\263\273\346\230\276\347\244\272", nullptr));
+        groupBox->setTitle(QCoreApplication::translate("MainWindow", "\346\222\255\347\247\215\345\214\272\345\237\237", nullptr));
+        areaLengthLabel->setText(QCoreApplication::translate("MainWindow", "\345\214\272\345\237\237\351\225\277\345\272\246 (m):", nullptr));
+        areaWidthLabel->setText(QCoreApplication::translate("MainWindow", "\345\214\272\345\237\237\345\256\275\345\272\246 (m):", nullptr));
+        label->setText(QCoreApplication::translate("MainWindow", "\345\236\204\347\237\251 (m):", nullptr));
         fieldLengthLabel->setText(QCoreApplication::translate("MainWindow", "\345\260\217\345\214\272\351\225\277\345\272\246 (m):", nullptr));
-        advanceDistanceLabel->setText(QCoreApplication::translate("MainWindow", "\346\217\220\345\211\215\351\207\217 (m):", nullptr));
-        groupBox_2->setTitle(QCoreApplication::translate("MainWindow", "\346\216\247\345\210\266\345\231\250\345\217\202\346\225\260", nullptr));
-        label_4->setText(QCoreApplication::translate("MainWindow", "\347\263\273\347\273\237\345\273\266\350\277\237 (s):", nullptr));
-        label_5->setText(QCoreApplication::translate("MainWindow", "\350\277\237\346\273\236\351\230\210\345\200\274 (m):", nullptr));
-        loadConfigButton->setText(QCoreApplication::translate("MainWindow", "\345\212\240\350\275\275\351\205\215\347\275\256", nullptr));
-        saveConfigButton->setText(QCoreApplication::translate("MainWindow", "\344\277\235\345\255\230\351\205\215\347\275\256", nullptr));
+        label_2->setText(QCoreApplication::translate("MainWindow", "\350\277\207\351\201\223\345\256\275\345\272\246 (m):", nullptr));
+        label_3->setText(QCoreApplication::translate("MainWindow", "\345\260\217\345\214\272\345\206\205\345\236\204\346\225\260:", nullptr));
+        seedsPerBlockLabel->setText(QCoreApplication::translate("MainWindow", "\345\260\217\345\214\272\345\206\205\346\222\255\347\247\215\346\225\260:", nullptr));
+        triggerDistanceLabel->setText(QCoreApplication::translate("MainWindow", "\345\274\200\345\247\213\350\247\246\345\217\221\350\267\235\347\246\273 (m):", nullptr));
+        stopTriggerDistanceLabel->setText(QCoreApplication::translate("MainWindow", "\344\270\255\346\226\255\350\247\246\345\217\221\350\267\235\347\246\273 (m):", nullptr));
+        pathPlanningGroupBox->setTitle(QCoreApplication::translate("MainWindow", "\350\267\257\345\276\204\350\247\204\345\210\222\345\217\202\346\225\260", nullptr));
+        oPointLatitudeLabel->setText(QCoreApplication::translate("MainWindow", "O\347\202\271\347\272\254\345\272\246:", nullptr));
+        oPointLongitudeLabel->setText(QCoreApplication::translate("MainWindow", "O\347\202\271\347\273\217\345\272\246:", nullptr));
+        aPointLatitudeLabel->setText(QCoreApplication::translate("MainWindow", "A\347\202\271\347\272\254\345\272\246:", nullptr));
+        aPointLongitudeLabel->setText(QCoreApplication::translate("MainWindow", "A\347\202\271\347\273\217\345\272\246:", nullptr));
+        speedPulseFactorLabel->setText(QCoreApplication::translate("MainWindow", "\351\200\237\345\272\246-\350\204\211\345\206\262\347\263\273\346\225\260:", nullptr));
+        speedFrequencyFactorLabel->setText(QCoreApplication::translate("MainWindow", "\351\200\237\345\272\246-\351\242\221\347\216\207\347\263\273\346\225\260:", nullptr));
+        generateConfigButton->setText(QCoreApplication::translate("MainWindow", "\347\224\237\346\210\220", nullptr));
+        clearConfigButton->setText(QCoreApplication::translate("MainWindow", "\346\270\205\351\233\266", nullptr));
+        loadConfigButton->setText(QCoreApplication::translate("MainWindow", "\350\256\276\347\275\256\344\270\272\345\216\237\347\202\271", nullptr));
+        saveConfigButton->setText(QCoreApplication::translate("MainWindow", "\350\256\276\347\275\256\344\270\272A\347\202\271", nullptr));
+        tabWidget->setTabText(tabWidget->indexOf(tab_settings), QCoreApplication::translate("MainWindow", "\351\205\215\347\275\256\347\252\227\345\217\243", nullptr));
         databaseGroupBox->setTitle(QCoreApplication::translate("MainWindow", "\346\225\260\346\215\256\345\272\223\350\277\236\346\216\245", nullptr));
         databaseStatusLabel->setText(QCoreApplication::translate("MainWindow", "\346\225\260\346\215\256\345\272\223\347\212\266\346\200\201: \346\234\252\350\277\236\346\216\245", nullptr));
         connectDatabaseButton->setText(QCoreApplication::translate("MainWindow", "\350\277\236\346\216\245\346\225\260\346\215\256\345\272\223", nullptr));
-        historyGroupBox->setTitle(QCoreApplication::translate("MainWindow", "\345\216\206\345\217\262\344\275\234\344\270\232\346\225\260\346\215\256", nullptr));
         jobInfoGroupBox->setTitle(QCoreApplication::translate("MainWindow", "\344\275\234\344\270\232\344\277\241\346\201\257", nullptr));
         jobIdLabel->setText(QCoreApplication::translate("MainWindow", "\344\275\234\344\270\232ID:", nullptr));
         jobIdValueLabel->setText(QCoreApplication::translate("MainWindow", "--", nullptr));
-        jobDateLabel->setText(QCoreApplication::translate("MainWindow", "\344\275\234\344\270\232\346\227\245\346\234\237:", nullptr));
+        jobDateLabel->setText(QCoreApplication::translate("MainWindow", "\346\227\245\346\234\237:", nullptr));
         jobDateValueLabel->setText(QCoreApplication::translate("MainWindow", "--", nullptr));
-        jobAreaLabel->setText(QCoreApplication::translate("MainWindow", "\344\275\234\344\270\232\351\235\242\347\247\257:", nullptr));
+        jobAreaLabel->setText(QCoreApplication::translate("MainWindow", "\351\235\242\347\247\257:", nullptr));
         jobAreaValueLabel->setText(QCoreApplication::translate("MainWindow", "--", nullptr));
-        jobSeedlingsLabel->setText(QCoreApplication::translate("MainWindow", "\346\222\255\347\247\215\346\225\260\351\207\217:", nullptr));
+        jobSeedlingsLabel->setText(QCoreApplication::translate("MainWindow", "\346\222\255\347\247\215\346\225\260:", nullptr));
         jobSeedlingsValueLabel->setText(QCoreApplication::translate("MainWindow", "--", nullptr));
+        operationControlGroupBox->setTitle(QCoreApplication::translate("MainWindow", "\344\275\234\344\270\232\346\216\247\345\210\266", nullptr));
+        seedingStatusLabel->setText(QCoreApplication::translate("MainWindow", "\346\222\255\347\247\215\347\212\266\346\200\201:", nullptr));
+        seedingStatusIndicator->setText(QCoreApplication::translate("MainWindow", "\360\237\224\264 \346\234\252\346\222\255\347\247\215", nullptr));
+        pathPlanningLabel->setText(QCoreApplication::translate("MainWindow", "\350\267\257\345\276\204\350\247\204\345\210\222:", nullptr));
+        currentSectionLabel->setText(QCoreApplication::translate("MainWindow", "\345\275\223\345\211\215\345\214\272\351\227\264: 0", nullptr));
+        targetPointLabel->setText(QCoreApplication::translate("MainWindow", "\347\233\256\346\240\207\347\202\271: (0.00, 0.00)", nullptr));
+        triggerPointLabel->setText(QCoreApplication::translate("MainWindow", "\350\247\246\345\217\221\347\202\271: (0.00, 0.00)", nullptr));
+        operationDataLabel->setText(QCoreApplication::translate("MainWindow", "\344\275\234\344\270\232\346\225\260\346\215\256:", nullptr));
+        seedlingsCountLabel->setText(QCoreApplication::translate("MainWindow", "Seedlings: 0", nullptr));
+        operationProgressLabel->setText(QCoreApplication::translate("MainWindow", "\350\277\233\345\272\246: 0%", nullptr));
+        startButton->setText(QCoreApplication::translate("MainWindow", "\345\274\200\345\247\213", nullptr));
+        stopButton->setText(QCoreApplication::translate("MainWindow", "\345\201\234\346\255\242", nullptr));
+        configButton->setText(QCoreApplication::translate("MainWindow", "\351\205\215\347\275\256", nullptr));
         tabWidget->setTabText(tabWidget->indexOf(tab_data), QCoreApplication::translate("MainWindow", "\346\225\260\346\215\256\347\252\227\345\217\243", nullptr));
+        timeAndSensorGroupBox->setTitle(QCoreApplication::translate("MainWindow", "\346\246\202\350\246\201\344\277\241\346\201\257", nullptr));
+        timeLabel->setText(QCoreApplication::translate("MainWindow", "\346\234\254\345\234\260\346\227\266\351\227\264:", nullptr));
+        localTimeLabel->setText(QCoreApplication::translate("MainWindow", "2024-01-01 00:00:00", nullptr));
+        gpsTimeLabel->setText(QCoreApplication::translate("MainWindow", "\345\215\253\346\230\237\346\227\266\351\227\264:", nullptr));
+        gpsTimeValueLabel->setText(QCoreApplication::translate("MainWindow", "--", nullptr));
+        imuAccelerationLabel->setText(QCoreApplication::translate("MainWindow", "\345\212\240\351\200\237\345\272\246: ", nullptr));
+        gpsPositionLabel->setText(QCoreApplication::translate("MainWindow", "\347\273\217\347\272\254\345\272\246/\351\253\230\345\272\246: (0.000000, 0.000000, 0.00 m)", nullptr));
+        imuDthetaLabel->setText(QCoreApplication::translate("MainWindow", "\350\247\222\351\200\237\345\272\246\345\242\236\351\207\217: ", nullptr));
+        speedLabel->setText(QCoreApplication::translate("MainWindow", "\351\200\237\345\272\246: 0.00 m/s", nullptr));
+        imuOutputMagneticHeadingLabel->setText(QCoreApplication::translate("MainWindow", "IMU\347\243\201\350\210\252\345\220\221: ", nullptr));
+        magneticHeadingLabel->setText(QCoreApplication::translate("MainWindow", "\347\243\201\346\226\271\344\275\215\350\247\222: 0.00 \302\260", nullptr));
+        imuAngleDisplayLabel->setText(QCoreApplication::translate("MainWindow", "\345\275\223\345\211\215\350\247\222\345\272\246: (0.00, 0.00, 0.00) \302\260", nullptr));
+        imuDataCountLabel->setText(QCoreApplication::translate("MainWindow", "\346\234\211\346\225\210IMU\346\225\260\346\215\256: 0", nullptr));
+        gpsDataCountLabel->setText(QCoreApplication::translate("MainWindow", "\346\234\211\346\225\210GPS\346\225\260\346\215\256: 0", nullptr));
         menuFile->setTitle(QCoreApplication::translate("MainWindow", "\346\226\207\344\273\266", nullptr));
         menuEdit->setTitle(QCoreApplication::translate("MainWindow", "\347\274\226\350\276\221", nullptr));
         menuHelp->setTitle(QCoreApplication::translate("MainWindow", "\345\270\256\345\212\251", nullptr));
