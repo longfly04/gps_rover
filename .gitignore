@@ -80,9 +80,13 @@ temp/
 # Documentation build
 build/
 .cache/
+cache/
 .qtc_clangd/
 .qtcreator/
 .trae/
 release/
+others/
 GPSSeeder.pro
 resource/
+.claude/
+CLAUDE.md
