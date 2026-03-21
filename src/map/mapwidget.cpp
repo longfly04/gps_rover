@@ -70,6 +70,7 @@ MapWidget::MapWidget(QWidget *parent)
     , m_rotationAnimation(new QVariantAnimation(this))
     , m_currentPose()
     , m_lastPoseTimestamp(-1.0)
+    , m_lastTriggerSequence(0)
     , m_isDragging(false)
     , m_compassPressed(false)
     , m_recenterPressed(false)
@@ -176,6 +177,16 @@ void MapWidget::updateVehiclePose(const EstimatedPose& pose)
         m_trajectoryPoints.back() = worldPos;
     }
 
+    if (pose.hasLastTriggerEvent && pose.triggerSequence > m_lastTriggerSequence) {
+        const QPointF triggerWorld = localToWorld(pose.lastTriggerX, pose.lastTriggerY);
+        m_triggerHistoryPoints.append(triggerWorld);
+        m_lastTriggerSequence = pose.triggerSequence;
+        while (m_triggerHistoryPoints.size() > 256) {
+            m_triggerHistoryPoints.remove(0);
+        }
+        update();
+    }
+
     if (!m_timerInitialized) {
         m_updateTimer.start();
         m_timerInitialized = true;
@@ -202,7 +213,9 @@ void MapWidget::updateVehiclePose(const EstimatedPose& pose)
 void MapWidget::clearPath()
 {
     m_trajectoryPoints.clear();
+    m_triggerHistoryPoints.clear();
     m_lastPoseTimestamp = -1.0;
+    m_lastTriggerSequence = 0;
     update();
 }
 
@@ -212,9 +225,11 @@ void MapWidget::clearPath()
 void MapWidget::clearAll()
 {
     m_trajectoryPoints.clear();
+    m_triggerHistoryPoints.clear();
     m_selectedBlockId = 0;
     m_currentPose = EstimatedPose();
     m_lastPoseTimestamp = -1.0;
+    m_lastTriggerSequence = 0;
     m_hasGeographicContext = false;
     m_compassPressed = false;
     m_recenterPressed = false;
@@ -244,7 +259,9 @@ void MapWidget::paintEvent(QPaintEvent *event)
     drawLocalAxes(painter);
     drawBlocks(painter);
     drawSelectedBoundary(painter);
+    drawTriggerLines(painter);
     drawTrajectory(painter);
+    drawTriggerRuntime(painter);
     drawVehiclePose(painter);
     drawCompass(painter);
     drawRecenterButton(painter);
@@ -410,6 +427,30 @@ void MapWidget::drawFallbackGrid(QPainter &painter)
     }
 }
 
+void MapWidget::drawLabelBubble(QPainter &painter,
+                                const QPointF &anchor,
+                                const QString &text,
+                                const QPointF &offset) const
+{
+    painter.save();
+    const QFontMetrics metrics(painter.font());
+    const int paddingX = 6;
+    const int paddingY = 3;
+    const QSize textSize(metrics.horizontalAdvance(text), metrics.height());
+    const QRectF bubbleRect(anchor.x() + offset.x(),
+                            anchor.y() + offset.y() - textSize.height(),
+                            textSize.width() + paddingX * 2,
+                            textSize.height() + paddingY * 2);
+    painter.setPen(Qt::NoPen);
+    painter.setBrush(QColor(255, 255, 255, 170));
+    painter.drawRoundedRect(bubbleRect, 4, 4);
+    painter.setPen(QColor(35, 35, 35, 230));
+    painter.drawText(bubbleRect.adjusted(paddingX, paddingY, -paddingX, -paddingY),
+                     Qt::AlignLeft | Qt::AlignVCenter,
+                     text);
+    painter.restore();
+}
+
 /**
  * @brief 绘制本地坐标轴
  */
@@ -418,28 +459,6 @@ void MapWidget::drawLocalAxes(QPainter &painter)
     if (!m_coordinate || !m_coordinate->isInitialized() || !m_blockResult.isValid) {
         return;
     }
-
-    const auto drawLabelBubble = [&painter](const QPointF &anchor,
-                                            const QString &text,
-                                            const QPointF &offset = QPointF(8.0, -8.0)) {
-        painter.save();
-        const QFontMetrics metrics(painter.font());
-        const int paddingX = 6;
-        const int paddingY = 3;
-        const QSize textSize(metrics.horizontalAdvance(text), metrics.height());
-        const QRectF bubbleRect(anchor.x() + offset.x(),
-                                anchor.y() + offset.y() - textSize.height(),
-                                textSize.width() + paddingX * 2,
-                                textSize.height() + paddingY * 2);
-        painter.setPen(Qt::NoPen);
-        painter.setBrush(QColor(255, 255, 255, 170));
-        painter.drawRoundedRect(bubbleRect, 4, 4);
-        painter.setPen(QColor(35, 35, 35, 230));
-        painter.drawText(bubbleRect.adjusted(paddingX, paddingY, -paddingX, -paddingY),
-                         Qt::AlignLeft | Qt::AlignVCenter,
-                         text);
-        painter.restore();
-    };
 
     const double xMax = std::max(0.0, m_blockResult.totalWidth);
     const double yMax = std::max(0.0, m_blockResult.totalLength);
@@ -471,7 +490,7 @@ void MapWidget::drawLocalAxes(QPainter &painter)
         painter.drawLine(QPointF(tickPoint.x() - 4, tickPoint.y()), QPointF(tickPoint.x() + 4, tickPoint.y()));
         painter.setPen(QPen(QColor(35, 35, 35, 220), 1.2));
         painter.drawLine(QPointF(tickPoint.x() - 4, tickPoint.y()), QPointF(tickPoint.x() + 4, tickPoint.y()));
-        drawLabelBubble(tickPoint, QString::number(yValue, 'f', 4) + " m", QPointF(8.0, 6.0));
+        drawLabelBubble(painter, tickPoint, QString::number(yValue, 'f', 4) + " m", QPointF(8.0, 6.0));
         painter.setPen(QPen(QColor(255, 255, 255, 180), 3, Qt::SolidLine, Qt::RoundCap));
     }
 
@@ -482,7 +501,7 @@ void MapWidget::drawLocalAxes(QPainter &painter)
         painter.drawLine(QPointF(tickPoint.x(), tickPoint.y() - 4), QPointF(tickPoint.x(), tickPoint.y() + 4));
         painter.setPen(QPen(QColor(35, 35, 35, 220), 1.2));
         painter.drawLine(QPointF(tickPoint.x(), tickPoint.y() - 4), QPointF(tickPoint.x(), tickPoint.y() + 4));
-        drawLabelBubble(tickPoint, QString::number(xValue, 'f', 4) + " m", QPointF(6.0, -6.0));
+        drawLabelBubble(painter, tickPoint, QString::number(xValue, 'f', 4) + " m", QPointF(6.0, -6.0));
         painter.setPen(QPen(QColor(255, 255, 255, 180), 3, Qt::SolidLine, Qt::RoundCap));
     }
 
@@ -492,7 +511,97 @@ void MapWidget::drawLocalAxes(QPainter &painter)
     painter.restore();
 
     painter.setFont(QFont("Arial", 8));
-    drawLabelBubble(originScreen, QStringLiteral("O(0.0000, 0.0000)"));
+    drawLabelBubble(painter, originScreen, QStringLiteral("O(0.0000, 0.0000)"));
+}
+
+/**
+ * @brief 绘制触发线
+ */
+void MapWidget::drawTriggerLines(QPainter &painter)
+{
+    if (!m_coordinate || !m_coordinate->isInitialized() || !m_blockResult.isValid || m_blockResult.triggerLines.empty()) {
+        return;
+    }
+
+    painter.save();
+    painter.setRenderHint(QPainter::Antialiasing, true);
+    painter.setFont(QFont("Arial", 8));
+
+    for (const auto& line : m_blockResult.triggerLines) {
+        const QPointF worldStart = localToWorld(line.xStart, line.y);
+        const QPointF worldEnd = localToWorld(line.xEnd, line.y);
+        const QPointF screenStart = worldToScreen(worldStart.x(), worldStart.y());
+        const QPointF screenEnd = worldToScreen(worldEnd.x(), worldEnd.y());
+        const bool isCurrent = m_currentPose.hasNextTrigger && m_currentPose.nextTriggerIndex == line.lineIndex;
+
+        painter.setPen(QPen(isCurrent ? QColor(255, 140, 0, 220) : QColor(255, 140, 0, 130),
+                            isCurrent ? 2.2 : 1.2,
+                            Qt::DashLine,
+                            Qt::RoundCap));
+        painter.drawLine(screenStart, screenEnd);
+
+        const QPointF labelAnchor((screenStart.x() + screenEnd.x()) * 0.5, (screenStart.y() + screenEnd.y()) * 0.5);
+        drawLabelBubble(painter,
+                        labelAnchor,
+                        QString("T%1  Y=%2").arg(line.lineIndex).arg(line.y, 0, 'f', 4),
+                        QPointF(8.0, isCurrent ? -10.0 : -6.0));
+    }
+
+    painter.restore();
+}
+
+/**
+ * @brief 绘制触发运行态
+ */
+void MapWidget::drawTriggerRuntime(QPainter &painter)
+{
+    if (!m_coordinate || !m_coordinate->isInitialized()) {
+        return;
+    }
+
+    painter.save();
+    painter.setRenderHint(QPainter::Antialiasing, true);
+    painter.setFont(QFont("Arial", 8));
+
+    for (const QPointF& worldPoint : m_triggerHistoryPoints) {
+        const QPointF screenPoint = worldToScreen(worldPoint.x(), worldPoint.y());
+        painter.setPen(Qt::NoPen);
+        painter.setBrush(QColor(220, 20, 60, 210));
+        painter.drawEllipse(screenPoint, 4.0, 4.0);
+        painter.setBrush(QColor(255, 255, 255, 200));
+        painter.drawEllipse(screenPoint, 1.5, 1.5);
+    }
+
+    if (m_currentPose.hasLastTriggerEvent) {
+        const QPointF lastTriggerWorld = localToWorld(m_currentPose.lastTriggerX, m_currentPose.lastTriggerY);
+        const QPointF lastTriggerScreen = worldToScreen(lastTriggerWorld.x(), lastTriggerWorld.y());
+        painter.setPen(QPen(QColor(160, 0, 0, 220), 1.5));
+        painter.setBrush(QColor(255, 80, 80, 220));
+        painter.drawEllipse(lastTriggerScreen, 5.0, 5.0);
+        drawLabelBubble(painter,
+                        lastTriggerScreen,
+                        QString("触发#%1 (%2, %3)")
+                            .arg(m_currentPose.triggerSequence)
+                            .arg(m_currentPose.lastTriggerX, 0, 'f', 4)
+                            .arg(m_currentPose.lastTriggerY, 0, 'f', 4),
+                        QPointF(10.0, -10.0));
+    }
+
+    if (m_currentPose.predictedTriggerTimeUs > 0 && m_currentPose.nextTriggerCountdownSec >= 0.0) {
+        const QPointF predictedWorld = localToWorld(m_currentPose.predictedTriggerX, m_currentPose.predictedTriggerY);
+        const QPointF predictedScreen = worldToScreen(predictedWorld.x(), predictedWorld.y());
+        painter.setPen(QPen(QColor(255, 196, 0, 230), 2.0));
+        painter.setBrush(QColor(255, 235, 59, 190));
+        painter.drawEllipse(predictedScreen, 6.0, 6.0);
+        drawLabelBubble(painter,
+                        predictedScreen,
+                        QString("预测 T%1  Δt=%2s")
+                            .arg(m_currentPose.nextTriggerIndex)
+                            .arg(m_currentPose.nextTriggerCountdownSec, 0, 'f', 3),
+                        QPointF(10.0, -12.0));
+    }
+
+    painter.restore();
 }
 
 /**

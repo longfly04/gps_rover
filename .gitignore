@@ -88,5 +88,5 @@ release/
 others/
 GPSSeeder.pro
 resource/
-.claude/
 CLAUDE.md
+.claude/*

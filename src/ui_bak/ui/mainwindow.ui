@@ -216,7 +216,7 @@
              <item row="2" column="0" colspan="2">
               <widget class="QLabel" name="imuConfigLabel">
                <property name="text">
-                <string>IMU有效数据: 0</string>
+                <string>IMU有效数据计数: 0</string>
                </property>
               </widget>
              </item>
@@ -299,7 +299,7 @@
              <item row="2" column="0" colspan="2">
               <widget class="QLabel" name="gpsConfigLabel">
                <property name="text">
-                <string>GPS有效数据: 0</string>
+                <string>GPS有效数据计数: 0</string>
                </property>
               </widget>
              </item>
@@ -609,6 +609,58 @@
                </property>
               </widget>
              </item>
+             <item row="3" column="2">
+              <widget class="QLabel" name="triggerDistanceLabel">
+               <property name="text">
+                <string>开始触发距离 (m):</string>
+               </property>
+              </widget>
+             </item>
+             <item row="3" column="3">
+              <widget class="QDoubleSpinBox" name="triggerDistanceSpinBox">
+               <property name="decimals">
+                <number>1</number>
+               </property>
+               <property name="minimum">
+                <double>0.100000000000000</double>
+               </property>
+               <property name="maximum">
+                <double>5.000000000000000</double>
+               </property>
+               <property name="singleStep">
+                <double>0.100000000000000</double>
+               </property>
+               <property name="value">
+                <double>1.000000000000000</double>
+               </property>
+              </widget>
+             </item>
+             <item row="4" column="0">
+              <widget class="QLabel" name="stopTriggerDistanceLabel">
+               <property name="text">
+                <string>中断触发距离 (m):</string>
+               </property>
+              </widget>
+             </item>
+             <item row="4" column="1">
+              <widget class="QDoubleSpinBox" name="stopTriggerDistanceSpinBox">
+               <property name="decimals">
+                <number>1</number>
+               </property>
+               <property name="minimum">
+                <double>0.100000000000000</double>
+               </property>
+               <property name="maximum">
+                <double>5.000000000000000</double>
+               </property>
+               <property name="singleStep">
+                <double>0.100000000000000</double>
+               </property>
+               <property name="value">
+                <double>0.500000000000000</double>
+               </property>
+              </widget>
+             </item>
             </layout>
            </widget>
           </item>
@@ -725,7 +777,7 @@
              <item row="2" column="0">
               <widget class="QLabel" name="speedPulseFactorLabel">
                <property name="text">
-                <string>触发距离系数:</string>
+                <string>速度-脉冲系数:</string>
                </property>
               </widget>
              </item>
@@ -751,7 +803,7 @@
              <item row="2" column="2">
               <widget class="QLabel" name="speedFrequencyFactorLabel">
                <property name="text">
-                <string>转速系数:</string>
+                <string>速度-频率系数:</string>
                </property>
               </widget>
              </item>
@@ -774,58 +826,6 @@
                </property>
               </widget>
              </item>
-             <item row="3" column="0">
-              <widget class="QLabel" name="triggerDistanceLabel">
-               <property name="text">
-                <string>开始触发位置(m):</string>
-               </property>
-              </widget>
-             </item>
-             <item row="3" column="1">
-              <widget class="QDoubleSpinBox" name="triggerDistanceSpinBox">
-               <property name="decimals">
-                <number>1</number>
-               </property>
-               <property name="minimum">
-                <double>0.100000000000000</double>
-               </property>
-               <property name="maximum">
-                <double>1000.000000000000000</double>
-               </property>
-               <property name="singleStep">
-                <double>0.100000000000000</double>
-               </property>
-               <property name="value">
-                <double>1.000000000000000</double>
-               </property>
-              </widget>
-             </item>
-             <item row="3" column="2">
-              <widget class="QLabel" name="stopTriggerDistanceLabel">
-               <property name="text">
-                <string>结束触发位置(m):</string>
-               </property>
-              </widget>
-             </item>
-             <item row="3" column="3">
-              <widget class="QDoubleSpinBox" name="stopTriggerDistanceSpinBox">
-               <property name="decimals">
-                <number>1</number>
-               </property>
-               <property name="minimum">
-                <double>0.100000000000000</double>
-               </property>
-               <property name="maximum">
-                <double>1000.000000000000000</double>
-               </property>
-               <property name="singleStep">
-                <double>0.100000000000000</double>
-               </property>
-               <property name="value">
-                <double>0.500000000000000</double>
-               </property>
-              </widget>
-             </item>
             </layout>
            </widget>
           </item>
@@ -836,14 +836,14 @@
           <item>
            <widget class="QPushButton" name="generateConfigButton">
             <property name="text">
-             <string>生成触发线</string>
+             <string>生成</string>
             </property>
            </widget>
           </item>
           <item>
            <widget class="QPushButton" name="clearConfigButton">
             <property name="text">
-             <string>清除轨迹点</string>
+             <string>清零</string>
             </property>
            </widget>
           </item>
@@ -1270,13 +1270,6 @@
           <widget class="QLabel" name="imuAngleDisplayLabel">
            <property name="text">
             <string>当前角度: (0.00, 0.00, 0.00) °</string>
-           </property>
-          </widget>
-         </item>
-         <item row="3" column="1">
-          <widget class="QLabel" name="nextTriggerLabel">
-           <property name="text">
-            <string>距下一次触发:</string>
            </property>
           </widget>
          </item>

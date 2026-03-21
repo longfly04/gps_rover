@@ -1,0 +1,167 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>SummarySubWindow</class>
+ <widget class="QMdiSubWindow" name="SummarySubWindow">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>618</width>
+    <height>197</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>概要信息</string>
+  </property>
+  <widget class="QWidget" name="summarySubWindowWidget">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>404</width>
+     <height>122</height>
+    </rect>
+   </property>
+   <layout class="QVBoxLayout" name="timeAndSensorLayout">
+    <item>
+     <layout class="QHBoxLayout" name="timeAndSensorTopLayout">
+      <item>
+       <widget class="QLabel" name="timeLabel">
+        <property name="text">
+         <string>本地时间:</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QLabel" name="localTimeLabel">
+        <property name="text">
+         <string>2024-01-01 00:00:00</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <spacer name="horizontalSpacer_2">
+        <property name="orientation">
+         <enum>Qt::Orientation::Horizontal</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>20</width>
+          <height>1</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
+      <item>
+       <widget class="QLabel" name="gpsTimeLabel">
+        <property name="text">
+         <string>卫星时间:</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QLabel" name="gpsTimeValueLabel">
+        <property name="text">
+         <string>--</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <spacer name="horizontalSpacer_8">
+        <property name="orientation">
+         <enum>Qt::Orientation::Horizontal</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>40</width>
+          <height>1</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
+     </layout>
+    </item>
+    <item>
+     <layout class="QGridLayout" name="sensorDataGridLayout">
+      <property name="spacing">
+       <number>5</number>
+      </property>
+      <item row="0" column="0">
+       <widget class="QLabel" name="imuAccelerationLabel">
+        <property name="text">
+         <string>加速度: </string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="1">
+       <widget class="QLabel" name="gpsPositionLabel">
+        <property name="text">
+         <string>经纬度/高度: (0.000000, 0.000000, 0.00 m)</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="0">
+       <widget class="QLabel" name="imuDthetaLabel">
+        <property name="text">
+         <string>角速度增量: </string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="1">
+       <widget class="QLabel" name="speedLabel">
+        <property name="text">
+         <string>速度: 0.00 m/s</string>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="0">
+       <widget class="QLabel" name="imuOutputMagneticHeadingLabel">
+        <property name="text">
+         <string>IMU磁航向: </string>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="1">
+       <widget class="QLabel" name="magneticHeadingLabel">
+        <property name="text">
+         <string>磁方位角: 0.00 °</string>
+        </property>
+       </widget>
+      </item>
+      <item row="3" column="0">
+       <widget class="QLabel" name="imuAngleDisplayLabel">
+        <property name="text">
+         <string>当前角度: (0.00, 0.00, 0.00) °</string>
+        </property>
+       </widget>
+      </item>
+      <item row="4" column="0">
+       <widget class="QLabel" name="imuDataCountLabel">
+        <property name="text">
+         <string>有效IMU数据: 0</string>
+        </property>
+       </widget>
+      </item>
+      <item row="4" column="1">
+       <widget class="QLabel" name="gpsDataCountLabel">
+        <property name="text">
+         <string>有效GPS数据: 0</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </item>
+   </layout>
+  </widget>
+ </widget>
+ <customwidgets>
+  <customwidget>
+   <class>QMdiSubWindow</class>
+   <extends>QWidget</extends>
+   <header>qmdisubwindow.h</header>
+   <container>1</container>
+  </customwidget>
+ </customwidgets>
+ <resources/>
+ <connections/>
+</ui>

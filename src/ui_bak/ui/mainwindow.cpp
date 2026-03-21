@@ -14,8 +14,6 @@
 #include <QMessageBox>
 #include <QFileDialog>
 #include <QDateTime>
-#include <QDate>
-#include <QDir>
 #include <QTime>
 #include <QTimer>
 #include <QElapsedTimer>
@@ -23,10 +21,6 @@
 #include <QJsonObject>
 #include <QFile>
 #include <QTcpSocket>
-#include <QDoubleSpinBox>
-#include <QSpinBox>
-
-#include <cmath>
 
 // 包含日志组件
 #include "core/common/logger.h"
@@ -47,7 +41,6 @@ MainWindow::MainWindow(QWidget *parent) :
     dataCountTimer(nullptr),
     localTimeTimer(nullptr),
     mapUpdateTimer(nullptr),
-    triggerCommitTimer(nullptr),
     lastImuUpdateTime(0),
     lastGnssUpdateTime(0),
     hasValidImuData(false),
@@ -83,16 +76,12 @@ MainWindow::MainWindow(QWidget *parent) :
     localTimeTimer = new QTimer(this);
     QTimer *gpsTimeTimer = new QTimer(this);
     mapUpdateTimer = new QTimer(this);
-    triggerCommitTimer = new QTimer(this);
-    triggerCommitTimer->setSingleShot(true);
-    triggerCommitTimer->setTimerType(Qt::PreciseTimer);
-
+    
     // 连接定时器信号和槽
     connect(dataCountTimer, &QTimer::timeout, this, &MainWindow::resetDataCounts);
     connect(localTimeTimer, &QTimer::timeout, this, &MainWindow::updateLocalTime);
     connect(gpsTimeTimer, &QTimer::timeout, this, &MainWindow::updateGpsTime);
     connect(mapUpdateTimer, &QTimer::timeout, this, &MainWindow::updateMapFromTimer);
-    connect(triggerCommitTimer, &QTimer::timeout, this, &MainWindow::commitPendingTriggerFromTimer);
     
     // 启动定时器
     localTimeTimer->start(100); // 每100毫秒更新一次本地时间
@@ -236,8 +225,6 @@ void MainWindow::initCoordinateWidget()
         blockGenerator->setRowsPerBlock(ui->rowsPerBlockSpinBox->value());
         blockGenerator->setFieldLength(ui->fieldLengthSpinBox->value());
         blockGenerator->setHeadlandWidth(ui->headlandWidthSpinBox->value());
-        blockGenerator->setTriggerDistance(ui->triggerDistanceSpinBox->value());
-        blockGenerator->setStopTriggerDistance(ui->stopTriggerDistanceSpinBox->value());
     };
 
     auto invalidateCoordinatePlan = [this, syncBlockGeneratorParams]() {
@@ -249,7 +236,6 @@ void MainWindow::initCoordinateWidget()
 
         if (stateEstimator) {
             stateEstimator->reset();
-            stateEstimator->setTriggerPlan(BlockPlanResult());
         }
 
         if (ui->coordinateSystemWidget) {
@@ -284,10 +270,6 @@ void MainWindow::initCoordinateWidget()
     connect(ui->fieldLengthSpinBox, QOverload<double>::of(&QDoubleSpinBox::valueChanged),
             this, invalidateCoordinatePlan);
     connect(ui->headlandWidthSpinBox, QOverload<double>::of(&QDoubleSpinBox::valueChanged),
-            this, invalidateCoordinatePlan);
-    connect(ui->triggerDistanceSpinBox, QOverload<double>::of(&QDoubleSpinBox::valueChanged),
-            this, invalidateCoordinatePlan);
-    connect(ui->stopTriggerDistanceSpinBox, QOverload<double>::of(&QDoubleSpinBox::valueChanged),
             this, invalidateCoordinatePlan);
     connect(ui->oPointLatitudeSpinBox, QOverload<double>::of(&QDoubleSpinBox::valueChanged),
             this, invalidateCoordinatePlan);
@@ -526,7 +508,7 @@ void MainWindow::onImuDataUpdated(const IMU& imuData)
                 .arg(imuData.angle.z() * 180.0 / M_PI, 0, 'f', 2));
 
         // 配置页的计数标签（轻量，保留）
-        ui->imuConfigLabel->setText(QString("IMU有效数据: %1").arg(imuDataCount));
+        ui->imuConfigLabel->setText(QString("IMU有效数据计数: %1").arg(imuDataCount));
 
         // 保留IMU磁航向、加速度和角速度增量的刷新逻辑
         if (ui->imuOutputMagneticHeadingLabel) {
@@ -580,9 +562,6 @@ void MainWindow::onGnssDataUpdated(const GNSS& gnssData)
         // 始终保存最新的有效GNSS数据，用于地图更新
         latestGnssData = gnssData;
 
-        EstimatedPose triggerPose{};
-        bool hasEstimatorPose = false;
-
         // 如果坐标系已配置，将GPS数据喂给状态估计器
         if (coordinate && coordinate->isInitialized() && stateEstimator) {
             SensorData sensorData;
@@ -595,32 +574,13 @@ void MainWindow::onGnssDataUpdated(const GNSS& gnssData)
             sensorData.timestamp = gnssData.time;
 
             stateEstimator->update(sensorData);
-            triggerPose = stateEstimator->getPose();
-            hasEstimatorPose = true;
-            if (MapWidget* mapWidget = dynamic_cast<MapWidget*>(ui->mapWidget)) {
-                mapWidget->updateVehiclePose(triggerPose);
-            }
-            refreshTriggerUi(triggerPose);
-
-            if (triggerCommitTimer) {
-                if (triggerPose.predictedTriggerTimeUs > 0 && triggerPose.nextTriggerCountdownSec >= 0.0) {
-                    const qint64 nowUs = static_cast<qint64>(std::llround(sensorData.timestamp * 1e6));
-                    const qint64 delayUs = triggerPose.predictedTriggerTimeUs - nowUs;
-                    const int delayMs = std::max(0, static_cast<int>((delayUs + 999) / 1000));
-                    if (!triggerCommitTimer->isActive() || std::abs(triggerCommitTimer->remainingTime() - delayMs) > 20) {
-                        triggerCommitTimer->start(delayMs);
-                    }
-                } else {
-                    triggerCommitTimer->stop();
-                }
-            }
         }
 
         const GNSS& dataToUse = lastValidGnssData;
 
         // ---------- timeAndSensorGroupBox（概要信息）----------
         ui->gpsDataCountLabel->setText(QString("有效GPS数据: %1").arg(gpsDataCount));
-        ui->gpsConfigLabel->setText(QString("GPS有效数据: %1").arg(gpsDataCount));
+        ui->gpsConfigLabel->setText(QString("GPS有效数据计数: %1").arg(gpsDataCount));
 
         ui->gpsPositionLabel->setText(QString("经纬度/高度: (%1, %2, %3 m)")
             .arg(dataToUse.blh[0], 0, 'f', 6)
@@ -635,9 +595,7 @@ void MainWindow::onGnssDataUpdated(const GNSS& gnssData)
 
         ui->magneticHeadingLabel->setText(QString("磁方位角: %1 °").arg(dataToUse.magnetic_heading, 0, 'f', 1));
 
-        if (!hasEstimatorPose) {
-            refreshTriggerUi(EstimatedPose());
-        }
+
 
         // 每 100 个有效数据点记录一次日志（20Hz 下约 5 秒一次）
         if (gpsDataCount % 100 == 0) {
@@ -1145,14 +1103,8 @@ void MainWindow::on_generateConfigButton_clicked()
     blockGenerator->setRowsPerBlock(ui->rowsPerBlockSpinBox->value());
     blockGenerator->setFieldLength(ui->fieldLengthSpinBox->value());
     blockGenerator->setHeadlandWidth(ui->headlandWidthSpinBox->value());
-    blockGenerator->setTriggerDistance(ui->triggerDistanceSpinBox->value());
-    blockGenerator->setStopTriggerDistance(ui->stopTriggerDistanceSpinBox->value());
 
     const BlockPlanResult result = blockGenerator->generate();
-
-    if (stateEstimator) {
-        stateEstimator->setTriggerPlan(result);
-    }
 
     if (ui->coordinateSystemWidget) {
         if (TableWidget* tableWidget = dynamic_cast<TableWidget*>(ui->coordinateSystemWidget)) {
@@ -1167,11 +1119,6 @@ void MainWindow::on_generateConfigButton_clicked()
             mapWidget->clearPath();
         }
     }
-
-    if (triggerCommitTimer) {
-        triggerCommitTimer->stop();
-    }
-    refreshTriggerUi(EstimatedPose());
 
     LOG_INFO("已生成小区规划: %d个小区, %d个过道", result.totalBlocks, static_cast<int>(result.headlands.size()));
     QMessageBox::information(this, "生成成功", QString("已生成%1个小区，%2个过道").arg(result.totalBlocks).arg(result.headlands.size()));
@@ -1251,8 +1198,8 @@ void MainWindow::onTimeSyncCompleted(double dt)
 void MainWindow::resetDataCounts()
 {
     // 不再重置计数，只更新标签显示
-    ui->imuConfigLabel->setText(QString("IMU有效数据: %1").arg(imuDataCount));
-    ui->gpsConfigLabel->setText(QString("GPS有效数据: %1").arg(gpsDataCount));
+    ui->imuConfigLabel->setText(QString("IMU有效数据计数: %1").arg(imuDataCount));
+    ui->gpsConfigLabel->setText(QString("GPS有效数据计数: %1").arg(gpsDataCount));
 }
 
 /**
@@ -1271,9 +1218,8 @@ void MainWindow::updateMapFromTimer()
     }
 
     if (hasLocalFrameConfigured && coordinate && coordinate->isInitialized() && stateEstimator) {
-        const EstimatedPose pose = stateEstimator->getPose();
+        EstimatedPose pose = stateEstimator->getPose();
         mapWidget->updateVehiclePose(pose);
-        refreshTriggerUi(pose);
         return;
     }
 
@@ -1289,64 +1235,4 @@ void MainWindow::updateMapFromTimer()
     pose.timestamp = latestGnssData.time;
 
     mapWidget->updateVehiclePose(pose);
-    refreshTriggerUi(pose);
-}
-
-void MainWindow::commitPendingTriggerFromTimer()
-{
-    if (!stateEstimator) {
-        return;
-    }
-
-    if (stateEstimator->commitPredictedTrigger()) {
-        const EstimatedPose pose = stateEstimator->getPose();
-        if (MapWidget* mapWidget = dynamic_cast<MapWidget*>(ui->mapWidget)) {
-            mapWidget->updateVehiclePose(pose);
-        }
-        refreshTriggerUi(pose);
-    }
-}
-
-void MainWindow::refreshTriggerUi(const EstimatedPose& pose)
-{
-    if (!ui->currentSectionLabel || !ui->targetPointLabel || !ui->triggerPointLabel || !ui->nextTriggerLabel) {
-        return;
-    }
-
-    ui->currentSectionLabel->setText(QString("当前区间: %1").arg(pose.nextTriggerIndex));
-
-    if (pose.hasNextTrigger) {
-        ui->targetPointLabel->setText(
-            QString("目标点: T%1, Y=%2 m")
-                .arg(pose.nextTriggerIndex)
-                .arg(pose.nextTriggerLineY, 0, 'f', 4));
-    } else {
-        ui->targetPointLabel->setText(QStringLiteral("目标点: 无"));
-    }
-
-    if (pose.hasLastTriggerEvent) {
-        ui->triggerPointLabel->setText(
-            QString("触发点: (%1, %2)")
-                .arg(pose.lastTriggerX, 0, 'f', 4)
-                .arg(pose.lastTriggerY, 0, 'f', 4));
-    } else if (pose.predictedTriggerTimeUs > 0) {
-        ui->triggerPointLabel->setText(
-            QString("触发点: 预测(%1, %2)")
-                .arg(pose.predictedTriggerX, 0, 'f', 4)
-                .arg(pose.predictedTriggerY, 0, 'f', 4));
-    } else {
-        ui->triggerPointLabel->setText(QStringLiteral("触发点: (0.00, 0.00)"));
-    }
-
-    if (pose.predictedTriggerTimeUs > 0 && pose.nextTriggerCountdownSec >= 0.0) {
-        ui->nextTriggerLabel->setText(
-            QString("距离下一次触发: %1 s")
-                .arg(pose.nextTriggerCountdownSec, 0, 'f', 3));
-    } else if (pose.hasNextTrigger) {
-        ui->nextTriggerLabel->setText(
-            QString("距离下一次触发: 待进入精估计 (T%1)")
-                .arg(pose.nextTriggerIndex));
-    } else {
-        ui->nextTriggerLabel->setText(QStringLiteral("距离下一次触发: 无"));
-    }
 }

@@ -1,0 +1,291 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>StorageSubWindow</class>
+ <widget class="QMdiSubWindow" name="StorageSubWindow">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>800</width>
+    <height>600</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>存储</string>
+  </property>
+  <widget class="QWidget" name="storageSubWindowWidget">
+   <layout class="QVBoxLayout" name="verticalLayout">
+    <item>
+     <widget class="QGroupBox" name="databaseGroupBox">
+      <property name="title">
+       <string>数据库连接</string>
+      </property>
+      <layout class="QVBoxLayout" name="databaseLayout">
+       <item>
+        <widget class="QLabel" name="databaseStatusLabel">
+         <property name="text">
+          <string>数据库状态: 未连接</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QPushButton" name="connectDatabaseButton">
+         <property name="text">
+          <string>连接数据库</string>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+    </item>
+    <item>
+     <widget class="QGroupBox" name="jobInfoGroupBox">
+      <property name="title">
+       <string>作业信息</string>
+      </property>
+      <layout class="QHBoxLayout" name="jobInfoLayout">
+       <item>
+        <widget class="QLabel" name="jobIdLabel">
+         <property name="text">
+          <string>作业ID:</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QLabel" name="jobIdValueLabel">
+         <property name="text">
+          <string>--</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <spacer name="horizontalSpacer_4">
+         <property name="orientation">
+          <enum>Qt::Orientation::Horizontal</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>20</width>
+           <height>1</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+       <item>
+        <widget class="QLabel" name="jobDateLabel">
+         <property name="text">
+          <string>日期:</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QLabel" name="jobDateValueLabel">
+         <property name="text">
+          <string>--</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <spacer name="horizontalSpacer_5">
+         <property name="orientation">
+          <enum>Qt::Orientation::Horizontal</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>20</width>
+           <height>1</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+       <item>
+        <widget class="QLabel" name="jobAreaLabel">
+         <property name="text">
+          <string>面积:</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QLabel" name="jobAreaValueLabel">
+         <property name="text">
+          <string>--</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <spacer name="horizontalSpacer_6">
+         <property name="orientation">
+          <enum>Qt::Orientation::Horizontal</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>20</width>
+           <height>1</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+       <item>
+        <widget class="QLabel" name="jobSeedlingsLabel">
+         <property name="text">
+          <string>播种数:</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QLabel" name="jobSeedlingsValueLabel">
+         <property name="text">
+          <string>--</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <spacer name="horizontalSpacer_7">
+         <property name="orientation">
+          <enum>Qt::Orientation::Horizontal</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>40</width>
+           <height>1</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+      </layout>
+     </widget>
+    </item>
+    <item>
+     <widget class="QGroupBox" name="operationControlGroupBox">
+      <property name="title">
+       <string>作业控制</string>
+      </property>
+      <layout class="QVBoxLayout" name="operationControlLayout">
+       <item>
+        <layout class="QHBoxLayout" name="seedingStatusLayout">
+         <item>
+          <widget class="QLabel" name="seedingStatusLabel">
+           <property name="text">
+            <string>播种状态:</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QLabel" name="seedingStatusIndicator">
+           <property name="text">
+            <string>🔴 未播种</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <spacer name="horizontalSpacer">
+           <property name="orientation">
+            <enum>Qt::Orientation::Horizontal</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>40</width>
+             <height>1</height>
+            </size>
+           </property>
+          </spacer>
+         </item>
+        </layout>
+       </item>
+       <item>
+        <widget class="QListWidget" name="fieldListWidget">
+         <property name="minimumSize">
+          <size>
+           <width>0</width>
+           <height>50</height>
+          </size>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <layout class="QGridLayout" name="controlDataGridLayout">
+         <item row="0" column="0">
+          <widget class="QLabel" name="pathPlanningLabel">
+           <property name="text">
+            <string>路径规划:</string>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="1">
+          <widget class="QLabel" name="currentSectionLabel">
+           <property name="text">
+            <string>当前区间: 0</string>
+           </property>
+          </widget>
+         </item>
+         <item row="1" column="1">
+          <widget class="QLabel" name="targetPointLabel">
+           <property name="text">
+            <string>目标点: (0.00, 0.00)</string>
+           </property>
+          </widget>
+         </item>
+         <item row="2" column="1">
+          <widget class="QLabel" name="triggerPointLabel">
+           <property name="text">
+            <string>触发点: (0.00, 0.00)</string>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="2">
+          <widget class="QLabel" name="operationDataLabel">
+           <property name="text">
+            <string>作业数据:</string>
+           </property>
+          </widget>
+         </item>
+         <item row="1" column="2">
+          <widget class="QLabel" name="seedlingsCountLabel">
+           <property name="text">
+            <string>Seedlings: 0</string>
+           </property>
+          </widget>
+         </item>
+         <item row="2" column="2">
+          <widget class="QLabel" name="operationProgressLabel">
+           <property name="text">
+            <string>进度: 0%</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </item>
+      </layout>
+     </widget>
+    </item>
+    <item>
+     <layout class="QHBoxLayout" name="horizontalLayout_2">
+      <item>
+       <widget class="QPushButton" name="startButton">
+        <property name="text">
+         <string>开始</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="stopButton">
+        <property name="text">
+         <string>停止</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="configButton">
+        <property name="text">
+         <string>配置</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </item>
+   </layout>
+  </widget>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>

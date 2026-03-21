@@ -8,7 +8,7 @@
 /**
  * @brief 构造函数，初始化默认参数
  */
-BlockGenerator::BlockGenerator() 
+BlockGenerator::BlockGenerator()
     : m_rowSpacing(0.6),
       m_headlandWidth(1.0),
       m_fieldLength(5.0),
@@ -21,6 +21,13 @@ BlockGenerator::BlockGenerator()
       m_gridMinY(0.0),
       m_gridMaxY(0.0)
 {
+    m_result.totalLength = m_areaLength;
+    m_result.totalWidth = m_areaWidth;
+    m_result.totalBlocks = 0;
+    m_result.totalRows = 0;
+    m_result.triggerStartY = 0.0;
+    m_result.triggerStopY = 0.0;
+    m_result.triggerInterval = 0.0;
     m_result.isValid = false;
 }
 
@@ -111,8 +118,9 @@ BlockPlanResult BlockGenerator::generate()
         generateBlocksAndHeadlands();
         generateBoundaries();
         generateControlPoints();
+        generateTriggerLines();
         generateSeedingGrid();
-        
+
         m_result.totalLength = m_areaLength;
         m_result.totalWidth = m_areaWidth;
         m_result.totalBlocks = static_cast<int>(m_result.blocks.size());
@@ -243,14 +251,14 @@ void BlockGenerator::generateBoundaries()
 void BlockGenerator::generateControlPoints()
 {
     m_result.controlPoints.clear();
-    
+
     for (const auto& block : m_result.blocks) {
         for (int row = block.startRow; row <= block.endRow; ++row) {
             double rowX = (row - 1) * m_rowSpacing + m_rowSpacing / 2.0;
-            
+
             double startY = block.yStart + m_triggerDistance;
             double endY = block.yEnd - m_stopTriggerDistance;
-            
+
             BlockControlPoint startPt;
             startPt.blockId = block.blockId;
             startPt.rowNumber = row;
@@ -258,7 +266,7 @@ void BlockGenerator::generateControlPoints()
             startPt.y = startY;
             startPt.isStart = true;
             m_result.controlPoints.push_back(startPt);
-            
+
             BlockControlPoint endPt;
             endPt.blockId = block.blockId;
             endPt.rowNumber = row;
@@ -268,8 +276,63 @@ void BlockGenerator::generateControlPoints()
             m_result.controlPoints.push_back(endPt);
         }
     }
-    
+
     LOG_INFO("Generated %d control points", static_cast<int>(m_result.controlPoints.size()));
+}
+
+/**
+ * @brief 生成触发线
+ */
+void BlockGenerator::generateTriggerLines()
+{
+    m_result.triggerLines.clear();
+
+    const double interval = m_fieldLength + m_headlandWidth;
+    const double clampedStartInputY = std::clamp(m_triggerDistance, 0.0, m_areaLength);
+    const double clampedStopInputY = std::clamp(m_stopTriggerDistance, 0.0, m_areaLength);
+    const double startY = std::min(clampedStartInputY, clampedStopInputY);
+    const double stopY = std::max(clampedStartInputY, clampedStopInputY);
+
+    m_result.triggerStartY = startY;
+    m_result.triggerStopY = stopY;
+    m_result.triggerInterval = interval;
+
+    if (interval <= 0.0 || startY > stopY + 1e-9) {
+        LOG_WARN("Trigger line generation skipped: startY=%.4f, stopY=%.4f, interval=%.4f",
+                 startY, stopY, interval);
+        return;
+    }
+
+    if (clampedStartInputY != m_triggerDistance || clampedStopInputY != m_stopTriggerDistance) {
+        LOG_WARN("Trigger range clamped to area bounds: inputStartY=%.4f, inputStopY=%.4f, areaLength=%.4f, usedStartY=%.4f, usedStopY=%.4f",
+                 m_triggerDistance,
+                 m_stopTriggerDistance,
+                 m_areaLength,
+                 startY,
+                 stopY);
+    } else if (m_triggerDistance > m_stopTriggerDistance) {
+        LOG_WARN("Trigger range reordered by position: startInput=%.4f, stopInput=%.4f, usedStartY=%.4f, usedStopY=%.4f",
+                 m_triggerDistance,
+                 m_stopTriggerDistance,
+                 startY,
+                 stopY);
+    }
+
+    int lineIndex = 1;
+    for (double y = startY; y <= stopY + 1e-9; y += interval) {
+        TriggerLineSpec line;
+        line.lineIndex = lineIndex++;
+        line.y = y;
+        line.xStart = 0.0;
+        line.xEnd = m_areaWidth;
+        m_result.triggerLines.push_back(line);
+    }
+
+    LOG_INFO("Generated %d trigger lines: startY=%.4f, stopY=%.4f, interval=%.4f",
+             static_cast<int>(m_result.triggerLines.size()),
+             m_result.triggerStartY,
+             m_result.triggerStopY,
+             m_result.triggerInterval);
 }
 
 /**

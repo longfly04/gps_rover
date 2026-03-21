@@ -26,24 +26,20 @@ option(GPSSEEDER_WINDEPLOYQT "Run windeployqt after build" OFF)
 qt_add_executable(GPSSeeder
     src/main.cpp
     src/ui/mainwindow.cpp
+    src/ui/mainwindow.ui
     src/map/tablewidget.cpp
     src/map/mapwidget.cpp
     src/map/osmtilelayer.cpp
-
     src/map/blockgenerator.cpp
     src/core/sensor/sensorinterface.cpp
     src/database/dbmanager.cpp
-    # KF-GINS相关源文件
     src/core/common/time_sync.cpp
     src/core/common/logger.cpp
     src/core/fileio/gnssserialloader.cpp
-
     src/core/fileio/imuserialloader.cpp
-
     src/core/fileio/serialport.cpp
     src/map/statestimator.cpp
     src/map/coordinate.cpp
-    src/ui/mainwindow.ui
 )
 
 # 添加包含目录

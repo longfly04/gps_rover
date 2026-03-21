@@ -125,6 +125,10 @@ public:
     QSpinBox *rowsPerBlockSpinBox;
     QLabel *seedsPerBlockLabel;
     QSpinBox *seedsPerBlockSpinBox;
+    QLabel *triggerDistanceLabel;
+    QDoubleSpinBox *triggerDistanceSpinBox;
+    QLabel *stopTriggerDistanceLabel;
+    QDoubleSpinBox *stopTriggerDistanceSpinBox;
     QGroupBox *pathPlanningGroupBox;
     QGridLayout *pathPlanningFormLayout;
     QLabel *oPointLatitudeLabel;
@@ -139,10 +143,6 @@ public:
     QDoubleSpinBox *speedPulseFactorSpinBox;
     QLabel *speedFrequencyFactorLabel;
     QDoubleSpinBox *speedFrequencyFactorSpinBox;
-    QLabel *triggerDistanceLabel;
-    QDoubleSpinBox *triggerDistanceSpinBox;
-    QLabel *stopTriggerDistanceLabel;
-    QDoubleSpinBox *stopTriggerDistanceSpinBox;
     QHBoxLayout *configFileLayout;
     QPushButton *generateConfigButton;
     QPushButton *clearConfigButton;
@@ -205,7 +205,6 @@ public:
     QLabel *imuOutputMagneticHeadingLabel;
     QLabel *magneticHeadingLabel;
     QLabel *imuAngleDisplayLabel;
-    QLabel *nextTriggerLabel;
     QLabel *imuDataCountLabel;
     QLabel *gpsDataCountLabel;
     QMenuBar *menubar;
@@ -622,6 +621,36 @@ public:
 
         formLayout->addWidget(seedsPerBlockSpinBox, 3, 1, 1, 1);
 
+        triggerDistanceLabel = new QLabel(groupBox);
+        triggerDistanceLabel->setObjectName("triggerDistanceLabel");
+
+        formLayout->addWidget(triggerDistanceLabel, 3, 2, 1, 1);
+
+        triggerDistanceSpinBox = new QDoubleSpinBox(groupBox);
+        triggerDistanceSpinBox->setObjectName("triggerDistanceSpinBox");
+        triggerDistanceSpinBox->setDecimals(1);
+        triggerDistanceSpinBox->setMinimum(0.100000000000000);
+        triggerDistanceSpinBox->setMaximum(5.000000000000000);
+        triggerDistanceSpinBox->setSingleStep(0.100000000000000);
+        triggerDistanceSpinBox->setValue(1.000000000000000);
+
+        formLayout->addWidget(triggerDistanceSpinBox, 3, 3, 1, 1);
+
+        stopTriggerDistanceLabel = new QLabel(groupBox);
+        stopTriggerDistanceLabel->setObjectName("stopTriggerDistanceLabel");
+
+        formLayout->addWidget(stopTriggerDistanceLabel, 4, 0, 1, 1);
+
+        stopTriggerDistanceSpinBox = new QDoubleSpinBox(groupBox);
+        stopTriggerDistanceSpinBox->setObjectName("stopTriggerDistanceSpinBox");
+        stopTriggerDistanceSpinBox->setDecimals(1);
+        stopTriggerDistanceSpinBox->setMinimum(0.100000000000000);
+        stopTriggerDistanceSpinBox->setMaximum(5.000000000000000);
+        stopTriggerDistanceSpinBox->setSingleStep(0.100000000000000);
+        stopTriggerDistanceSpinBox->setValue(0.500000000000000);
+
+        formLayout->addWidget(stopTriggerDistanceSpinBox, 4, 1, 1, 1);
+
 
         parametersLayout->addWidget(groupBox);
 
@@ -718,36 +747,6 @@ public:
         speedFrequencyFactorSpinBox->setValue(1.000000000000000);
 
         pathPlanningFormLayout->addWidget(speedFrequencyFactorSpinBox, 2, 3, 1, 1);
-
-        triggerDistanceLabel = new QLabel(pathPlanningGroupBox);
-        triggerDistanceLabel->setObjectName("triggerDistanceLabel");
-
-        pathPlanningFormLayout->addWidget(triggerDistanceLabel, 3, 0, 1, 1);
-
-        triggerDistanceSpinBox = new QDoubleSpinBox(pathPlanningGroupBox);
-        triggerDistanceSpinBox->setObjectName("triggerDistanceSpinBox");
-        triggerDistanceSpinBox->setDecimals(1);
-        triggerDistanceSpinBox->setMinimum(0.100000000000000);
-        triggerDistanceSpinBox->setMaximum(1000.000000000000000);
-        triggerDistanceSpinBox->setSingleStep(0.100000000000000);
-        triggerDistanceSpinBox->setValue(1.000000000000000);
-
-        pathPlanningFormLayout->addWidget(triggerDistanceSpinBox, 3, 1, 1, 1);
-
-        stopTriggerDistanceLabel = new QLabel(pathPlanningGroupBox);
-        stopTriggerDistanceLabel->setObjectName("stopTriggerDistanceLabel");
-
-        pathPlanningFormLayout->addWidget(stopTriggerDistanceLabel, 3, 2, 1, 1);
-
-        stopTriggerDistanceSpinBox = new QDoubleSpinBox(pathPlanningGroupBox);
-        stopTriggerDistanceSpinBox->setObjectName("stopTriggerDistanceSpinBox");
-        stopTriggerDistanceSpinBox->setDecimals(1);
-        stopTriggerDistanceSpinBox->setMinimum(0.100000000000000);
-        stopTriggerDistanceSpinBox->setMaximum(1000.000000000000000);
-        stopTriggerDistanceSpinBox->setSingleStep(0.100000000000000);
-        stopTriggerDistanceSpinBox->setValue(0.500000000000000);
-
-        pathPlanningFormLayout->addWidget(stopTriggerDistanceSpinBox, 3, 3, 1, 1);
 
 
         parametersLayout->addWidget(pathPlanningGroupBox);
@@ -1040,11 +1039,6 @@ public:
 
         sensorDataGridLayout->addWidget(imuAngleDisplayLabel, 3, 0, 1, 1);
 
-        nextTriggerLabel = new QLabel(timeAndSensorGroupBox);
-        nextTriggerLabel->setObjectName("nextTriggerLabel");
-
-        sensorDataGridLayout->addWidget(nextTriggerLabel, 3, 1, 1, 1);
-
         imuDataCountLabel = new QLabel(timeAndSensorGroupBox);
         imuDataCountLabel->setObjectName("imuDataCountLabel");
 
@@ -1136,7 +1130,7 @@ public:
         imuBaudComboBox->setItemText(3, QCoreApplication::translate("MainWindow", "57600", nullptr));
         imuBaudComboBox->setItemText(4, QCoreApplication::translate("MainWindow", "115200", nullptr));
 
-        imuConfigLabel->setText(QCoreApplication::translate("MainWindow", "IMU\346\234\211\346\225\210\346\225\260\346\215\256: 0", nullptr));
+        imuConfigLabel->setText(QCoreApplication::translate("MainWindow", "IMU\346\234\211\346\225\210\346\225\260\346\215\256\350\256\241\346\225\260: 0", nullptr));
         gpsSettingsGroupBox->setTitle(QCoreApplication::translate("MainWindow", "GPS\345\217\202\346\225\260\350\256\276\347\275\256", nullptr));
         gpsPortLabel->setText(QCoreApplication::translate("MainWindow", "\344\270\262\345\217\243\345\217\267:", nullptr));
         gpsPortComboBox->setItemText(0, QCoreApplication::translate("MainWindow", "COM1", nullptr));
@@ -1151,7 +1145,7 @@ public:
         gpsBaudComboBox->setItemText(3, QCoreApplication::translate("MainWindow", "57600", nullptr));
         gpsBaudComboBox->setItemText(4, QCoreApplication::translate("MainWindow", "115200", nullptr));
 
-        gpsConfigLabel->setText(QCoreApplication::translate("MainWindow", "GPS\346\234\211\346\225\210\346\225\260\346\215\256: 0", nullptr));
+        gpsConfigLabel->setText(QCoreApplication::translate("MainWindow", "GPS\346\234\211\346\225\210\346\225\260\346\215\256\350\256\241\346\225\260: 0", nullptr));
         plcSettingsGroupBox->setTitle(QCoreApplication::translate("MainWindow", "PLC\345\217\202\346\225\260\350\256\276\347\275\256", nullptr));
         plcPortLabel->setText(QCoreApplication::translate("MainWindow", "\345\234\260\345\235\200:", nullptr));
         plcIpLineEdit->setText(QCoreApplication::translate("MainWindow", "127.0.0.1", nullptr));
@@ -1173,17 +1167,17 @@ public:
         label_2->setText(QCoreApplication::translate("MainWindow", "\350\277\207\351\201\223\345\256\275\345\272\246 (m):", nullptr));
         label_3->setText(QCoreApplication::translate("MainWindow", "\345\260\217\345\214\272\345\206\205\345\236\204\346\225\260:", nullptr));
         seedsPerBlockLabel->setText(QCoreApplication::translate("MainWindow", "\345\260\217\345\214\272\345\206\205\346\222\255\347\247\215\346\225\260:", nullptr));
+        triggerDistanceLabel->setText(QCoreApplication::translate("MainWindow", "\345\274\200\345\247\213\350\247\246\345\217\221\350\267\235\347\246\273 (m):", nullptr));
+        stopTriggerDistanceLabel->setText(QCoreApplication::translate("MainWindow", "\344\270\255\346\226\255\350\247\246\345\217\221\350\267\235\347\246\273 (m):", nullptr));
         pathPlanningGroupBox->setTitle(QCoreApplication::translate("MainWindow", "\350\267\257\345\276\204\350\247\204\345\210\222\345\217\202\346\225\260", nullptr));
         oPointLatitudeLabel->setText(QCoreApplication::translate("MainWindow", "O\347\202\271\347\272\254\345\272\246:", nullptr));
         oPointLongitudeLabel->setText(QCoreApplication::translate("MainWindow", "O\347\202\271\347\273\217\345\272\246:", nullptr));
         aPointLatitudeLabel->setText(QCoreApplication::translate("MainWindow", "A\347\202\271\347\272\254\345\272\246:", nullptr));
         aPointLongitudeLabel->setText(QCoreApplication::translate("MainWindow", "A\347\202\271\347\273\217\345\272\246:", nullptr));
-        speedPulseFactorLabel->setText(QCoreApplication::translate("MainWindow", "\350\247\246\345\217\221\350\267\235\347\246\273\347\263\273\346\225\260:", nullptr));
-        speedFrequencyFactorLabel->setText(QCoreApplication::translate("MainWindow", "\350\275\254\351\200\237\347\263\273\346\225\260:", nullptr));
-        triggerDistanceLabel->setText(QCoreApplication::translate("MainWindow", "\345\274\200\345\247\213\350\247\246\345\217\221\344\275\215\347\275\256(m):", nullptr));
-        stopTriggerDistanceLabel->setText(QCoreApplication::translate("MainWindow", "\347\273\223\346\235\237\350\247\246\345\217\221\344\275\215\347\275\256(m):", nullptr));
-        generateConfigButton->setText(QCoreApplication::translate("MainWindow", "\347\224\237\346\210\220\350\247\246\345\217\221\347\272\277", nullptr));
-        clearConfigButton->setText(QCoreApplication::translate("MainWindow", "\346\270\205\351\231\244\350\275\250\350\277\271\347\202\271", nullptr));
+        speedPulseFactorLabel->setText(QCoreApplication::translate("MainWindow", "\351\200\237\345\272\246-\350\204\211\345\206\262\347\263\273\346\225\260:", nullptr));
+        speedFrequencyFactorLabel->setText(QCoreApplication::translate("MainWindow", "\351\200\237\345\272\246-\351\242\221\347\216\207\347\263\273\346\225\260:", nullptr));
+        generateConfigButton->setText(QCoreApplication::translate("MainWindow", "\347\224\237\346\210\220", nullptr));
+        clearConfigButton->setText(QCoreApplication::translate("MainWindow", "\346\270\205\351\233\266", nullptr));
         loadConfigButton->setText(QCoreApplication::translate("MainWindow", "\350\256\276\347\275\256\344\270\272\345\216\237\347\202\271", nullptr));
         saveConfigButton->setText(QCoreApplication::translate("MainWindow", "\350\256\276\347\275\256\344\270\272A\347\202\271", nullptr));
         tabWidget->setTabText(tabWidget->indexOf(tab_settings), QCoreApplication::translate("MainWindow", "\351\205\215\347\275\256\347\252\227\345\217\243", nullptr));
@@ -1225,7 +1219,6 @@ public:
         imuOutputMagneticHeadingLabel->setText(QCoreApplication::translate("MainWindow", "IMU\347\243\201\350\210\252\345\220\221: ", nullptr));
         magneticHeadingLabel->setText(QCoreApplication::translate("MainWindow", "\347\243\201\346\226\271\344\275\215\350\247\222: 0.00 \302\260", nullptr));
         imuAngleDisplayLabel->setText(QCoreApplication::translate("MainWindow", "\345\275\223\345\211\215\350\247\222\345\272\246: (0.00, 0.00, 0.00) \302\260", nullptr));
-        nextTriggerLabel->setText(QCoreApplication::translate("MainWindow", "\350\267\235\344\270\213\344\270\200\346\254\241\350\247\246\345\217\221:", nullptr));
         imuDataCountLabel->setText(QCoreApplication::translate("MainWindow", "\346\234\211\346\225\210IMU\346\225\260\346\215\256: 0", nullptr));
         gpsDataCountLabel->setText(QCoreApplication::translate("MainWindow", "\346\234\211\346\225\210GPS\346\225\260\346\215\256: 0", nullptr));
         menuFile->setTitle(QCoreApplication::translate("MainWindow", "\346\226\207\344\273\266", nullptr));

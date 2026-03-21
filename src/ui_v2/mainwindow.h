@@ -10,6 +10,7 @@
 #include <QTextEdit>
 #include <QTextCursor>
 #include <QSerialPortInfo>
+#include <QPointF>
 #include "map/statestimator.h"
 #include "map/coordinate.h"
 #include "map/blockgenerator.h"
@@ -24,8 +25,14 @@
 QT_BEGIN_NAMESPACE
 namespace Ui {
 class MainWindow;
+class MapSubWindow;
+class SettingsSubWindow;
+class StorageSubWindow;
+class SummarySubWindow;
 }
 QT_END_NAMESPACE
+
+class QMdiSubWindow;
 
 /**
  * @brief 主窗口类，负责整个应用程序的用户界面和控制逻辑
@@ -50,14 +57,13 @@ signals:
     // 信号已简化，直接从传感器连接到处理函数
 
 private slots:
+    
 
-
-
+    
     /**
      * @brief 更新本地时间显示
      */
     void updateLocalTime();
-    void commitPendingTriggerFromTimer();
     
     /**
      * @brief 更新卫星时间显示
@@ -118,13 +124,6 @@ private slots:
     void onGnssDataUpdated(const GNSS& gnssData);
     
     /**
-     * @brief 处理地图类型切换事件
-     */
-    void on_mapTypeComboBox_currentIndexChanged(int index);
-    
-
-    
-    /**
      * @brief 处理开始按钮点击事件
      */
     void on_startButton_clicked();
@@ -155,9 +154,29 @@ private slots:
     void on_connectDatabaseButton_clicked();
     
     /**
-     * @brief 处理历史作业列表项点击事件
+     * @brief 处理地块列表项点击事件
      */
-    void on_historyListWidget_itemClicked(QListWidgetItem* item);
+    void on_fieldListWidget_itemClicked(QListWidgetItem* item);
+    
+    /**
+     * @brief 处理地图菜单项点击事件
+     */
+    void on_actionMap_triggered();
+    
+    /**
+     * @brief 处理配置菜单项点击事件
+     */
+    void on_actionSettings_triggered();
+    
+    /**
+     * @brief 处理存储菜单项点击事件
+     */
+    void on_actionStorage_triggered();
+    
+    /**
+     * @brief 处理概要菜单项点击事件
+     */
+    void on_actionSummary_triggered();
     
 
     
@@ -177,6 +196,18 @@ private:
     StateEstimator *stateEstimator; ///< 状态估计模块
     Coordinate *coordinate; ///< 坐标转换模块
     BlockGenerator *blockGenerator; ///< 小区生成模块
+    
+    // 子窗口UI指针
+    Ui::MapSubWindow *mapSubWindowUi; ///< 地图子窗口UI指针
+    Ui::SettingsSubWindow *settingsSubWindowUi; ///< 配置子窗口UI指针
+    Ui::StorageSubWindow *storageSubWindowUi; ///< 存储子窗口UI指针
+    Ui::SummarySubWindow *summarySubWindowUi; ///< 概要信息子窗口UI指针
+    
+    // 子窗口指针
+    QMdiSubWindow *mapSubWindow; ///< 地图子窗口指针
+    QMdiSubWindow *settingsSubWindow; ///< 配置子窗口指针
+    QMdiSubWindow *storageSubWindow; ///< 存储子窗口指针
+    QMdiSubWindow *summarySubWindow; ///< 概要信息子窗口指针
     
     // 静态指针，用于在静态方法中访问MainWindow实例
     static MainWindow* instance;
@@ -223,7 +254,6 @@ private:
     
     // 地图更新定时器（每秒更新一次）
     QTimer *mapUpdateTimer; ///< 用于地图更新的定时器，每秒刷新一次
-    QTimer *triggerCommitTimer; ///< 用于预测触发提交的精确定时器
     
     // 最新的GPS数据（用于定时更新地图）
     GNSS latestGnssData; ///< 最新的有效GNSS数据
@@ -235,6 +265,11 @@ private:
      * @brief 初始化UI组件
      */
     void initUI();
+    
+    /**
+     * @brief 初始化子窗口
+     */
+    void initSubWindows();
 
     /**
      * @brief 初始化各个功能模块
@@ -295,12 +330,6 @@ private:
      * @brief 从定时器触发的地图更新函数，每秒调用一次
      */
     void updateMapFromTimer();
-
-    /**
-     * @brief 刷新触发相关界面标签
-     * @param pose 当前估计姿态
-     */
-    void refreshTriggerUi(const EstimatedPose& pose);
     
     /**
      * @brief 将时间戳转换为可读的时间格式

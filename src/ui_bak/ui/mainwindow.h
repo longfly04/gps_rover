@@ -50,14 +50,13 @@ signals:
     // 信号已简化，直接从传感器连接到处理函数
 
 private slots:
+    
 
-
-
+    
     /**
      * @brief 更新本地时间显示
      */
     void updateLocalTime();
-    void commitPendingTriggerFromTimer();
     
     /**
      * @brief 更新卫星时间显示
@@ -223,7 +222,6 @@ private:
     
     // 地图更新定时器（每秒更新一次）
     QTimer *mapUpdateTimer; ///< 用于地图更新的定时器，每秒刷新一次
-    QTimer *triggerCommitTimer; ///< 用于预测触发提交的精确定时器
     
     // 最新的GPS数据（用于定时更新地图）
     GNSS latestGnssData; ///< 最新的有效GNSS数据
@@ -295,12 +293,6 @@ private:
      * @brief 从定时器触发的地图更新函数，每秒调用一次
      */
     void updateMapFromTimer();
-
-    /**
-     * @brief 刷新触发相关界面标签
-     * @param pose 当前估计姿态
-     */
-    void refreshTriggerUi(const EstimatedPose& pose);
     
     /**
      * @brief 将时间戳转换为可读的时间格式

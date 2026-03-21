@@ -137,6 +137,28 @@ private:
     void drawLocalAxes(QPainter &painter);
 
     /**
+     * @brief 绘制本地坐标标签气泡
+     * @param painter 画笔
+     * @param anchor 锚点
+     * @param text 文本
+     * @param offset 偏移
+     */
+    void drawLabelBubble(QPainter &painter, const QPointF &anchor, const QString &text,
+                         const QPointF &offset = QPointF(8.0, -8.0)) const;
+
+    /**
+     * @brief 绘制触发线
+     * @param painter 画笔
+     */
+    void drawTriggerLines(QPainter &painter);
+
+    /**
+     * @brief 绘制触发运行态
+     * @param painter 画笔
+     */
+    void drawTriggerRuntime(QPainter &painter);
+
+    /**
      * @brief 绘制小区和边界
      * @param painter 画笔
      */
@@ -341,7 +363,9 @@ private:
 
     EstimatedPose m_currentPose; ///< 当前设备姿态
     QVector<QPointF> m_trajectoryPoints; ///< 轨迹点（世界坐标）
+    QVector<QPointF> m_triggerHistoryPoints; ///< 已触发点历史（世界坐标）
     double m_lastPoseTimestamp; ///< 上次已记录的位姿时间戳
+    int m_lastTriggerSequence; ///< 上次已同步的触发序号
 
     bool m_isDragging; ///< 是否正在拖动
     bool m_compassPressed; ///< 是否按下指南针

@@ -59,6 +59,16 @@ struct BlockControlPoint {
 };
 
 /**
+ * @brief 触发线规格
+ */
+struct TriggerLineSpec {
+    int lineIndex;            ///< 触发线编号（从1开始）
+    double y;                 ///< 触发线Y坐标（米）
+    double xStart;            ///< 起始X坐标（米）
+    double xEnd;              ///< 结束X坐标（米）
+};
+
+/**
  * @brief 小区规划结果
  */
 struct BlockPlanResult {
@@ -66,14 +76,18 @@ struct BlockPlanResult {
     std::vector<HeadlandSpec> headlands;     ///< 过道列表
     std::vector<BlockBoundary> boundaries;   ///< 边界列表
     std::vector<BlockControlPoint> controlPoints; ///< 控制点列表
-    
-    double totalLength;        ///< 总长度（米）
-    double totalWidth;         ///< 总宽度（米）
-    int totalBlocks;           ///< 小区总数
-    int totalRows;             ///< 总垄数
-    
-    bool isValid;              ///< 结果是否有效
-    std::string errorMessage;  ///< 错误信息
+    std::vector<TriggerLineSpec> triggerLines; ///< 触发线列表
+
+    double totalLength = 0.0;   ///< 总长度（米）
+    double totalWidth = 0.0;    ///< 总宽度（米）
+    int totalBlocks = 0;        ///< 小区总数
+    int totalRows = 0;          ///< 总垄数
+    double triggerStartY = 0.0; ///< 起始触发线Y坐标（米）
+    double triggerStopY = 0.0;  ///< 停止触发判定Y坐标（米）
+    double triggerInterval = 0.0; ///< 触发线间隔（米）
+
+    bool isValid = false;       ///< 结果是否有效
+    std::string errorMessage;   ///< 错误信息
 };
 
 /**
@@ -212,7 +226,12 @@ private:
      * @brief 生成控制点
      */
     void generateControlPoints();
-    
+
+    /**
+     * @brief 生成触发线
+     */
+    void generateTriggerLines();
+
     /**
      * @brief 生成播种网格
      */
