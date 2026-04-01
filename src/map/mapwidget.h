@@ -72,6 +72,12 @@ public:
     void updateVehiclePose(const EstimatedPose& pose);
 
     /**
+     * @brief 设置运动轨迹是否可见
+     * @param visible 是否显示历史轨迹
+     */
+    void setTrajectoryVisible(bool visible);
+
+    /**
      * @brief 清除轨迹
      */
     void clearPath();
@@ -364,6 +370,7 @@ private:
     EstimatedPose m_currentPose; ///< 当前设备姿态
     QVector<QPointF> m_trajectoryPoints; ///< 轨迹点（世界坐标）
     QVector<QPointF> m_triggerHistoryPoints; ///< 已触发点历史（世界坐标）
+    bool m_trajectoryVisible; ///< 是否显示历史运动轨迹
     double m_lastPoseTimestamp; ///< 上次已记录的位姿时间戳
     int m_lastTriggerSequence; ///< 上次已同步的触发序号
 

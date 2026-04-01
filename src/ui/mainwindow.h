@@ -5,11 +5,20 @@
 #include <QWidget>
 #include <QObject>
 #include <QListWidgetItem>
+#include <QTableWidget>
 
+#include <QLineEdit>
+#include <QPoint>
+#include <QPointF>
 #include <QTimer>
 #include <QTextEdit>
 #include <QTextCursor>
 #include <QSerialPortInfo>
+#include <QModbusTcpClient>
+#include <QModbusReply>
+#include <QStringList>
+#include <QVector>
+
 #include "map/statestimator.h"
 #include "map/coordinate.h"
 #include "map/blockgenerator.h"
@@ -45,6 +54,61 @@ public:
      * @brief 析构函数
      */
     ~MainWindow();
+
+private:
+    struct CellConfigRow {
+        int blockNo = 0;
+        QString blockName;
+        double blockWidthM = 0.0;
+        double clearanceM = 0.0;
+        double spacingCm = 0.0;
+        int ridges = 0;
+    };
+
+    struct SeederSystemParams {
+        double rowSpacingM = 0.0;
+        double seedHoleDistanceM = 0.0;
+        double thetaDisk = 0.0;
+        double omega0 = 0.0;
+        double seedRadiusM = 0.0;
+        int adsorbCount = 0;
+        double seedDropHeightM = 0.0;
+        QPointF antennaArmXY;
+        double antennaArmZ = 0.0;
+        double distancePulseRatio = 0.0;
+        double transmissionDelayS = 0.0;
+    };
+
+    struct SeedingPlanRow {
+        int blockId = 0;
+        int blockNo = 0;
+        QString blockName;
+        double blockWidthM = 0.0;
+        double clearanceM = 0.0;
+        double spacingCm = 0.0;
+        int ridges = 0;
+        double forCutlineY = 0.0;
+        double revCutlineY = 0.0;
+        double forwardSeedDropY = 0.0;
+        double reverseSeedDropY = 0.0;
+        double forwardTriggerY = 0.0;
+        double reverseTriggerY = 0.0;
+        double forwardTriggerParam = 0.0;
+        double reverseTriggerParam = 0.0;
+        double thetaDisk = 0.0;
+        double x1DistanceM = 0.0;
+        double x2DistanceM = 0.0;
+        double x4DistanceM = 0.0;
+        double x5DistanceM = 0.0;
+        double effectiveAdvanceM = 0.0;
+        int forwardLineIndex = 0;
+        int reverseLineIndex = 0;
+        QString forwardTriggerCoord;
+        QString forwardTriggerTime;
+        QString reverseTriggerCoord;
+        QString reverseTriggerTime;
+        QString statusText;
+    };
 
 signals:
     // 信号已简化，直接从传感器连接到处理函数
@@ -101,9 +165,52 @@ private slots:
     void on_plcConnectButton_clicked();
     
     /**
-     * @brief 处理PLC测试按钮点击事件
+     * @brief 处理PLC断开连接按钮点击事件
      */
     void on_plcDisconnectButton_clicked();
+
+    /**
+     * @brief 处理PLC寄存器保存按钮点击事件
+     * @param index 寄存器编号(1-5)
+     */
+    void on_plcSaveButton_clicked(int index);
+
+    /**
+     * @brief 处理PLC寄存器发送按钮点击事件
+     * @param index 寄存器编号(1-5)
+     */
+    void on_plcSendButton_clicked(int index);
+
+    /**
+     * @brief Modbus设备状态变化处理
+     * @param state 设备状态
+     */
+    void onModbusStateChanged(QModbusDevice::State state);
+
+    /**
+     * @brief Modbus错误处理
+     * @param error 错误类型
+     */
+    void onModbusErrorOccurred(QModbusDevice::Error error);
+
+    /**
+     * @brief 读取所有有效的寄存器
+     */
+    void readAllValidRegisters();
+
+    /**
+     * @brief 更新PLC读取值显示
+     * @param index 寄存器编号
+     * @param value 读取到的值
+     */
+    void updatePlcReadValue(int index, quint16 value);
+
+    /**
+     * @brief 更新PLC读取值显示（浮点数）
+     * @param index 寄存器编号
+     * @param value 读取到的浮点值
+     */
+    void updatePlcReadValueFloat(int index, float value);
     
     /**
      * @brief 处理IMU数据更新事件
@@ -153,6 +260,16 @@ private slots:
      * @brief 处理连接数据库按钮点击事件
      */
     void on_connectDatabaseButton_clicked();
+    
+    /**
+     * @brief 处理保存配置文件按钮点击事件
+     */
+    void on_saveConfigFileButton_clicked();
+    
+    /**
+     * @brief 处理加载配置文件按钮点击事件
+     */
+    void on_loadConfigFileButton_clicked();
     
     /**
      * @brief 处理历史作业列表项点击事件
@@ -224,12 +341,29 @@ private:
     // 地图更新定时器（每秒更新一次）
     QTimer *mapUpdateTimer; ///< 用于地图更新的定时器，每秒刷新一次
     QTimer *triggerCommitTimer; ///< 用于预测触发提交的精确定时器
-    
+
+    // Modbus TCP客户端
+    QModbusTcpClient *modbusClient; ///< Modbus TCP客户端
+    QTimer *plcReadTimer; ///< PLC寄存器读取定时器
+    bool isPlcConnected; ///< PLC连接状态
+    int plcReadCount; ///< PLC读取计数
+    int plcSendCount; ///< PLC发送计数
+
     // 最新的GPS数据（用于定时更新地图）
     GNSS latestGnssData; ///< 最新的有效GNSS数据
 
     bool hasLocalFrameConfigured = false; ///< 是否已完成O/A本地坐标系配置
     QPointF blockStartWorldPosition_ = QPointF(0.0, 0.0); ///< 用户指定的小区起始位置（本地坐标）
+    BlockPlanResult triggerPlanResult_; ///< 当前触发线计划
+    int lastProcessedTriggerSequence_ = 0; ///< 上次已写入表格的触发序号
+    QVector<CellConfigRow> cellConfigRows_;
+    QVector<SeedingPlanRow> generatedSeedingPlanRows_;
+    QVector<SeedingPlanRow> lockedSeedingPlanRows_;
+    bool seedingPlanLocked_ = false;
+    double generatedPlanReferenceSpeedMps_ = 0.0;
+    double dynamicPlanSpeedMps_ = 0.0;
+    int highlightedPlanRow_ = -1;
+    int nextPlanRow_ = -1;
 
     /**
      * @brief 初始化UI组件
@@ -301,16 +435,44 @@ private:
      * @param pose 当前估计姿态
      */
     void refreshTriggerUi(const EstimatedPose& pose);
-    
-    /**
-     * @brief 将时间戳转换为可读的时间格式
-     * @param timestamp 时间戳（秒）
-     * @return 可读的时间字符串
-     */
+    void resetTriggerHistory(const BlockPlanResult& plan);
+    void handleCommittedTrigger(const EstimatedPose& pose);
+    void updatePlanObservationLabels(const QVector<SeedingPlanRow>& rows, int preferredRow = -1, int secondaryRow = -1);
+    bool sendPlcCommandByIndex(int index, bool interactive, const QString& sourceContext = QString());
+    void triggerConfiguredPlcActions(const EstimatedPose& pose);
     QString timestampToDateTime(double timestamp);
+    bool parseCoordinateLineEdit(QLineEdit* lineEdit, double& latitude, double& longitude, const QString& fieldName, bool showMessage = true) const;
+    bool parseCellConfigTable(QVector<CellConfigRow>& rows, QString* errorMessage = nullptr) const;
+    bool parseSeederParams(SeederSystemParams& params, QString* errorMessage = nullptr) const;
+    bool parseDoubleLineEdit(QLineEdit* lineEdit, const QString& fieldName, double minValue, double& value, QString* errorMessage = nullptr) const;
+    bool parseIntLineEdit(QLineEdit* lineEdit, const QString& fieldName, int minValue, int& value, QString* errorMessage = nullptr) const;
+    bool parseThetaOmega(const QString& text, double& thetaDisk, double& omega0, QString* errorMessage = nullptr) const;
+    bool parseAntennaArm(const QString& text, QPointF& xy, double& z, QString* errorMessage = nullptr) const;
+    double currentReferenceSpeedMps() const;
+    double safeReferenceSpeedMps() const;
+    QVector<SeedingPlanRow> buildSeedingPlanRows(const QVector<CellConfigRow>& rows,
+                                                 const SeederSystemParams& params,
+                                                 double speedMps,
+                                                 QString* errorMessage = nullptr) const;
+    BlockPlanResult buildBlockPlanResultFromPlanRows(const QVector<SeedingPlanRow>& rows,
+                                                     const SeederSystemParams& params) const;
+    void populateSeedingPlanTable(const QVector<SeedingPlanRow>& rows);
+    void updatePlanStatusDisplay(const QVector<SeedingPlanRow>& rows, int currentRow, int nextRow);
+    void setSeedingPlanEditingLocked(bool locked);
+    void updateCellAreaLabel();
+    int findCurrentPlanRow(double y) const;
+    void refreshDynamicTriggerPlan(const EstimatedPose& pose);
     
+    // 新增函数声明
+    void on_reverseOrderCheckBox_toggled(bool checked);
+    void on_generateSeedingPlanButton_clicked();
+    void on_calculateSplitLineButton_clicked();
+    void on_antennaCalibrationButton_clicked();
+    void on_lockSeedingPlanButton_clicked();
+    void updateTableIndexColumn(QTableWidget* tableWidget);
 
-    
+
+
     // 暂时移除initTimeUpdate函数的声明，避免编译错误
     // /**
     //  * @brief 初始化时间更新定时器

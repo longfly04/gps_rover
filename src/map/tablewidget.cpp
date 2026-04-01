@@ -1,179 +1,190 @@
 #include "tablewidget.h"
+
+#include <algorithm>
+
+#include <QBrush>
+#include <QFont>
 #include <QHeaderView>
 #include <QTableWidgetItem>
-#include <QMouseEvent>
-#include <QStringList>
-#include "../core/common/logger.h"
 
 namespace {
-QString formatBoundary(const std::vector<BoundaryVertex>& vertices)
+constexpr int kSemanticRowCount = 6;
+constexpr int kForwardLineRow = 0;
+constexpr int kForwardCoordRow = 1;
+constexpr int kForwardTimeRow = 2;
+constexpr int kReverseLineRow = 3;
+constexpr int kReverseCoordRow = 4;
+constexpr int kReverseTimeRow = 5;
+constexpr int kCompactRowHeight = 30;
+
+const QColor kHighlightBackground(255, 235, 156);
+const QColor kForwardLineBackground(255, 244, 229);
+const QColor kReverseLineBackground(232, 244, 255);
+
+QColor rowBaseBackground(int row)
 {
-    QStringList parts;
-    parts.reserve(static_cast<int>(vertices.size()));
-    for (const auto& vertex : vertices) {
-        parts << QString("(%1,%2)")
-                     .arg(vertex.x, 0, 'f', 4)
-                     .arg(vertex.y, 0, 'f', 4);
+    return row <= kForwardTimeRow ? kForwardLineBackground : kReverseLineBackground;
+}
+
+QString verticalHeaderText(int row)
+{
+    switch (row) {
+    case kForwardLineRow:
+        return QStringLiteral("正向触发线");
+    case kForwardCoordRow:
+        return QStringLiteral("触发坐标");
+    case kForwardTimeRow:
+        return QStringLiteral("触发时刻");
+    case kReverseLineRow:
+        return QStringLiteral("反向触发线");
+    case kReverseCoordRow:
+        return QStringLiteral("触发坐标");
+    case kReverseTimeRow:
+        return QStringLiteral("触发时刻");
+    default:
+        return QString();
     }
-    return parts.join(";");
+}
+
+QString horizontalHeaderText(const BlockPlanResult& result, int cycleId)
+{
+    int forwardIndex = 0;
+    int reverseIndex = 0;
+
+    for (const auto& line : result.triggerLines) {
+        if (line.blockId != cycleId) {
+            continue;
+        }
+        if (line.direction > 0) {
+            forwardIndex = line.lineIndex;
+        } else if (line.direction < 0) {
+            reverseIndex = line.lineIndex;
+        }
+    }
+
+    if (forwardIndex > 0 && reverseIndex > 0) {
+        return QString("正T%1\n反T%2")
+            .arg(forwardIndex, 2, 10, QChar('0'))
+            .arg(reverseIndex, 2, 10, QChar('0'));
+    }
+    if (forwardIndex > 0) {
+        return QString("正T%1").arg(forwardIndex, 2, 10, QChar('0'));
+    }
+    if (reverseIndex > 0) {
+        return QString("反T%1").arg(reverseIndex, 2, 10, QChar('0'));
+    }
+    return QString("T%1").arg(cycleId, 2, 10, QChar('0'));
 }
 }
 
-/**
- * @brief 构造函数
- * @param parent 父组件
- */
-TableWidget::TableWidget(QWidget *parent) : QTableWidget(parent)
+TableWidget::TableWidget(QWidget *parent)
+    : QTableWidget(parent)
 {
     setMinimumSize(400, 400);
     initTable();
 }
 
-/**
- * @brief 初始化表格
- */
 void TableWidget::initTable()
 {
-    setColumnCount(5);
-
-    QStringList headers;
-    headers << "小区序号" << "正向边界" << "反向边界" << "种子编号" << "播种状态";
-    setHorizontalHeaderLabels(headers);
-
-    setAlternatingRowColors(true);
-    setStyleSheet("QTableWidget { border: 1px solid #ddd; } "
-                  "QTableWidget::item { padding: 5px; } "
-                  "QHeaderView::section { background-color: #f0f0f0; border: 1px solid #ddd; padding: 5px; } "
-                  "QTableWidget::item:alternate { background-color: #f9f9f9; } ");
-
-    horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
+    setColumnCount(0);
+    setRowCount(0);
+    setAlternatingRowColors(false);
+    setWordWrap(true);
+    setTextElideMode(Qt::ElideNone);
     setSortingEnabled(false);
-    setSelectionBehavior(QAbstractItemView::SelectRows);
-    setSelectionMode(QAbstractItemView::SingleSelection);
+    setSelectionMode(QAbstractItemView::NoSelection);
+    setSelectionBehavior(QAbstractItemView::SelectItems);
+    setEditTriggers(QAbstractItemView::NoEditTriggers);
+    setStyleSheet("QTableWidget { border: 1px solid #ddd; gridline-color: #d8d8d8; } "
+                  "QTableWidget::item { padding: 3px; } "
+                  "QHeaderView::section { background-color: #f0f0f0; border: 1px solid #ddd; padding: 3px; }");
+
+    QFont tableFont = font();
+    tableFont.setPointSize(std::max(7, tableFont.pointSize() - 2));
+    setFont(tableFont);
+
+    QFont headerFont = horizontalHeader()->font();
+    headerFont.setPointSize(std::max(7, headerFont.pointSize() - 2));
+    horizontalHeader()->setFont(headerFont);
+    horizontalHeader()->setDefaultAlignment(Qt::AlignCenter);
+    horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
+    horizontalHeader()->setMinimumSectionSize(72);
+
+    QFont verticalFont = verticalHeader()->font();
+    verticalFont.setPointSize(std::max(7, verticalFont.pointSize() - 1));
+    verticalHeader()->setFont(verticalFont);
+    verticalHeader()->setSectionResizeMode(QHeaderView::Fixed);
+    verticalHeader()->setDefaultSectionSize(kCompactRowHeight);
+    verticalHeader()->setMinimumWidth(92);
 }
 
-/**
- * @brief 设置小区规划结果
- * @param result 小区规划结果
- */
 void TableWidget::setBlockPlanResult(const BlockPlanResult& result)
 {
     m_result = result;
     updateTableData();
 }
 
-/**
- * @brief 更新指定小区的播种状态
- * @param blockId 小区编号
- * @param status 播种状态
- */
-void TableWidget::updateBlockStatus(int blockId, const QString& status)
+void TableWidget::setTriggerHistory(const QVector<QStringList>& history)
 {
-    for (int i = 0; i < m_result.blocks.size(); ++i) {
-        if (m_result.blocks[i].blockId == blockId) {
-            for (int row = 0; row < rowCount(); ++row) {
-                QTableWidgetItem* seedItem = item(row, 3);
-                if (seedItem && seedItem->text() == QString::number(blockId)) {
-                    setItem(row, 4, new QTableWidgetItem(status));
-                    return;
-                }
-            }
-        }
-    }
+    m_triggerHistory = history;
+    updateTableData();
 }
 
-/**
- * @brief 清空表格数据
- */
+void TableWidget::setHighlightedCells(const QVector<QPoint>& cells)
+{
+    m_highlightedCells = cells;
+    updateTableData();
+}
+
 void TableWidget::clearData()
 {
-    clearContents();
-    setRowCount(0);
     m_result = BlockPlanResult();
+    m_triggerHistory.clear();
+    m_highlightedCells.clear();
+    updateTableData();
 }
 
-/**
- * @brief 获取当前选中的小区编号
- */
-int TableWidget::getSelectedBlockId() const
-{
-    const int row = currentRow();
-    if (row < 0 || row >= static_cast<int>(m_result.blocks.size())) {
-        return 0;
-    }
-    return m_result.blocks[row].blockId;
-}
-
-/**
- * @brief 更新表格
- */
 void TableWidget::updateTableData()
 {
     clearContents();
-    setRowCount(static_cast<int>(m_result.blocks.size()));
 
-    for (int i = 0; i < m_result.blocks.size(); ++i) {
-        const BlockSpec& block = m_result.blocks[i];
-
-        QString startRidgeStr = QString::number(block.startRow, 10).rightJustified(4, '0');
-        QString endRidgeStr = QString::number(block.endRow, 10).rightJustified(4, '0');
-
-        int headlandIndex = 0;
-        for (const auto& headland : m_result.headlands) {
-            if (headland.yStart >= block.yEnd) {
-                headlandIndex = headland.headlandId;
-                break;
-            }
-        }
-        QString headlandStr = QString::number(headlandIndex, 10).rightJustified(3, '0');
-        QString blockCode = QString("%1%2-%3").arg(startRidgeStr).arg(endRidgeStr).arg(headlandStr);
-
-        QString forwardBoundary;
-        QString reverseBoundary;
-        for (const auto& boundary : m_result.boundaries) {
-            if (boundary.blockId == block.blockId) {
-                forwardBoundary = formatBoundary(boundary.forwardBoundary);
-                reverseBoundary = formatBoundary(boundary.reverseBoundary);
-                break;
-            }
-        }
-
-        setItem(i, 0, new QTableWidgetItem(blockCode));
-        setItem(i, 1, new QTableWidgetItem(forwardBoundary));
-        setItem(i, 2, new QTableWidgetItem(reverseBoundary));
-        setItem(i, 3, new QTableWidgetItem(QString::number(block.blockId)));
-        setItem(i, 4, new QTableWidgetItem("未播种"));
-
-        for (int j = 0; j < columnCount(); ++j) {
-            if (item(i, j)) {
-                item(i, j)->setTextAlignment(Qt::AlignCenter);
-            }
-        }
+    QStringList horizontalHeaders;
+    int cycleCount = 0;
+    for (const auto& line : m_result.triggerLines) {
+        cycleCount = std::max(cycleCount, line.blockId);
+    }
+    horizontalHeaders.reserve(cycleCount);
+    for (int cycleId = 1; cycleId <= cycleCount; ++cycleId) {
+        horizontalHeaders << horizontalHeaderText(m_result, cycleId);
     }
 
-    horizontalHeader()->resizeSection(1, 320);
-    horizontalHeader()->resizeSection(2, 320);
-}
+    setColumnCount(horizontalHeaders.size());
+    setHorizontalHeaderLabels(horizontalHeaders);
 
-/**
- * @brief 获取小区规划结果
- * @return 小区规划结果
- */
-BlockPlanResult TableWidget::getBlockPlanResult() const
-{
-    return m_result;
-}
+    QStringList verticalHeaders;
+    for (int row = 0; row < kSemanticRowCount; ++row) {
+        verticalHeaders << verticalHeaderText(row);
+    }
+    setRowCount(kSemanticRowCount);
+    setVerticalHeaderLabels(verticalHeaders);
 
-/**
- * @brief 鼠标按下事件
- * @param event 鼠标事件
- */
-void TableWidget::mousePressEvent(QMouseEvent *event)
-{
-    QTableWidget::mousePressEvent(event);
+    for (int row = 0; row < kSemanticRowCount; ++row) {
+        setRowHeight(row, kCompactRowHeight);
+        for (int column = 0; column < columnCount(); ++column) {
+            QString cellText;
+            if (column < m_triggerHistory.size() && row < m_triggerHistory[column].size()) {
+                cellText = m_triggerHistory[column][row];
+            }
 
-    const int selectedRow = currentRow();
-    if (selectedRow >= 0 && selectedRow < m_result.blocks.size()) {
-        emit blockSelected(m_result.blocks[selectedRow].blockId);
+            auto* cell = new QTableWidgetItem(cellText);
+            cell->setTextAlignment(Qt::AlignCenter);
+            cell->setBackground(QBrush(rowBaseBackground(row)));
+
+            if (m_highlightedCells.contains(QPoint(column, row))) {
+                cell->setBackground(QBrush(kHighlightBackground));
+            }
+
+            setItem(row, column, cell);
+        }
     }
 }

@@ -16,6 +16,7 @@ struct BlockSpec {
     double yEnd;              ///< Y轴结束位置（米）
     double width;             ///< 小区宽度（米）
     double length;            ///< 小区长度（米）
+    std::string name;         ///< 小区名称
 };
 
 /**
@@ -63,9 +64,13 @@ struct BlockControlPoint {
  */
 struct TriggerLineSpec {
     int lineIndex;            ///< 触发线编号（从1开始）
+    int blockId;              ///< 所属小区编号
+    int direction;            ///< 适用方向（+1=沿+Y，-1=沿-Y）
     double y;                 ///< 触发线Y坐标（米）
+    double boundaryY;         ///< 对应真实入口边界Y坐标（米）
     double xStart;            ///< 起始X坐标（米）
     double xEnd;              ///< 结束X坐标（米）
+    std::string blockName;    ///< 所属小区名称
 };
 
 /**
@@ -82,9 +87,10 @@ struct BlockPlanResult {
     double totalWidth = 0.0;    ///< 总宽度（米）
     int totalBlocks = 0;        ///< 小区总数
     int totalRows = 0;          ///< 总垄数
-    double triggerStartY = 0.0; ///< 起始触发线Y坐标（米）
-    double triggerStopY = 0.0;  ///< 停止触发判定Y坐标（米）
+    double triggerStartY = 0.0; ///< 触发线过滤起始Y坐标（米）
+    double triggerStopY = 0.0;  ///< 触发线过滤结束Y坐标（米）
     double triggerInterval = 0.0; ///< 触发线间隔（米）
+    double triggerAdvanceOffset = 0.0; ///< 触发线相对真实边界的提前量（米）
 
     bool isValid = false;       ///< 结果是否有效
     std::string errorMessage;   ///< 错误信息
@@ -142,12 +148,18 @@ public:
      * @param distance 触发距离（米）
      */
     void setTriggerDistance(double distance);
-    
+
     /**
      * @brief 设置中断触发距离
      * @param distance 触发距离（米）
      */
     void setStopTriggerDistance(double distance);
+
+    /**
+     * @brief 设置触发线提前量
+     * @param distance 提前量（米）
+     */
+    void setTriggerAdvanceOffset(double distance);
     
     /**
      * @brief 生成小区规划
@@ -250,8 +262,9 @@ private:
     int m_rowsPerBlock;        ///< 每小区垄数
     double m_areaLength;       ///< 区域长度（米）
     double m_areaWidth;        ///< 区域宽度（米）
-    double m_triggerDistance;  ///< 开始触发距离（米）
-    double m_stopTriggerDistance; ///< 中断触发距离（米）
+    double m_triggerDistance;  ///< 触发线过滤起始位置（米）
+    double m_stopTriggerDistance; ///< 触发线过滤结束位置（米）
+    double m_triggerAdvanceOffset; ///< 触发线相对真实边界的提前量（米）
     
     double m_gridStep;         ///< 网格步长（米）
     

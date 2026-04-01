@@ -57,6 +57,9 @@ StateEstimator::StateEstimator()
       m_lastTriggerX(0.0),
       m_lastTriggerY(0.0),
       m_lastTriggerTimeUs(0),
+      m_lastTriggerLineIndex(0),
+      m_lastTriggerDirection(0),
+      m_lastTriggerLineY(0.0),
       m_triggerSequence(0),
       m_deadzoneM(1.0)
 {
@@ -97,17 +100,96 @@ void StateEstimator::setTriggerPlan(const BlockPlanResult& plan)
     m_lastTriggerX = 0.0;
     m_lastTriggerY = 0.0;
     m_lastTriggerTimeUs = 0;
+    m_lastTriggerLineIndex = 0;
+    m_lastTriggerDirection = 0;
+    m_lastTriggerLineY = 0.0;
     m_triggerSequence = 0;
     updateTriggerPoseFields();
 
     if (!m_triggerLines.empty()) {
-        LOG_INFO("Trigger plan configured: %d lines, startY=%.4f, stopY=%.4f",
+        LOG_INFO("Trigger plan configured: %d lines, filterStartY=%.4f, filterStopY=%.4f",
                  static_cast<int>(m_triggerLines.size()),
-                 m_triggerLines.front().y,
+                 plan.triggerStartY,
                  m_triggerStopY);
     } else {
         LOG_INFO("Trigger plan cleared");
     }
+}
+
+bool StateEstimator::updatePendingTriggerPlan(const BlockPlanResult& plan)
+{
+    if (plan.triggerLines.empty()) {
+        m_triggerLines.clear();
+        m_nextTriggerVectorIndex = -1;
+        m_triggerStopY = plan.triggerStopY;
+        clearTriggerPrediction();
+        m_inFineMode = false;
+        updateTriggerPoseFields();
+        LOG_INFO("Pending trigger plan cleared");
+        return true;
+    }
+
+    const bool wasInFineMode = m_inFineMode;
+    const int currentLineIndex = (m_nextTriggerVectorIndex >= 0
+                                  && m_nextTriggerVectorIndex < static_cast<int>(m_triggerLines.size()))
+        ? m_triggerLines[static_cast<size_t>(m_nextTriggerVectorIndex)].lineIndex
+        : 0;
+    const int predictedLineIndex = (m_predictedTriggerVectorIndex >= 0
+                                    && m_predictedTriggerVectorIndex < static_cast<int>(m_triggerLines.size()))
+        ? m_triggerLines[static_cast<size_t>(m_predictedTriggerVectorIndex)].lineIndex
+        : 0;
+
+    m_triggerLines = plan.triggerLines;
+    m_triggerStopY = plan.triggerStopY;
+
+    auto findVectorIndexByLine = [this](int lineIndex) {
+        if (lineIndex <= 0) {
+            return -1;
+        }
+        for (int i = 0; i < static_cast<int>(m_triggerLines.size()); ++i) {
+            if (m_triggerLines[static_cast<size_t>(i)].lineIndex == lineIndex) {
+                return i;
+            }
+        }
+        return -1;
+    };
+
+    int nextVectorIndex = findVectorIndexByLine(currentLineIndex);
+    if (nextVectorIndex < 0) {
+        if (m_lastTravelDirection != 0 && !m_buffer.empty()) {
+            nextVectorIndex = findNextTriggerIndex(m_buffer.back().y, m_lastTravelDirection);
+        }
+        if (nextVectorIndex < 0 && !m_triggerLines.empty()) {
+            nextVectorIndex = m_lastTravelDirection < 0 ? static_cast<int>(m_triggerLines.size()) - 1 : 0;
+        }
+    }
+
+    const int predictedVectorIndex = findVectorIndexByLine(predictedLineIndex);
+    m_nextTriggerVectorIndex = nextVectorIndex;
+
+    const bool keepFineMode = wasInFineMode && currentLineIndex > 0 && m_nextTriggerVectorIndex >= 0;
+    const bool keepPrediction = m_hasPrediction
+        && predictedLineIndex > 0
+        && predictedLineIndex == currentLineIndex
+        && predictedVectorIndex == m_nextTriggerVectorIndex;
+
+    if (keepPrediction) {
+        m_predictedTriggerVectorIndex = predictedVectorIndex;
+        if (const TriggerLineSpec* triggerLine = currentTriggerLine()) {
+            m_predictedTriggerY = triggerLine->y;
+        }
+    } else {
+        clearTriggerPrediction();
+    }
+
+    m_inFineMode = keepFineMode;
+    updateTriggerPoseFields();
+    LOG_DEBUG("Pending trigger plan updated: lines=%d, nextIndex=%d, keepFineMode=%d, keepPrediction=%d",
+              static_cast<int>(m_triggerLines.size()),
+              m_nextTriggerVectorIndex,
+              keepFineMode ? 1 : 0,
+              keepPrediction ? 1 : 0);
+    return true;
 }
 
 void StateEstimator::update(const SensorData& data)
@@ -340,6 +422,15 @@ void StateEstimator::checkCrossing()
                 break;
             }
 
+            if (triggerLine->direction != direction) {
+                if (m_predictedTriggerVectorIndex == m_nextTriggerVectorIndex) {
+                    clearTriggerPrediction();
+                }
+                m_nextTriggerVectorIndex += direction;
+                m_inFineMode = false;
+                continue;
+            }
+
             double triggerX = 0.0;
             qint64 triggerTimeUs = 0;
             if (!interpolateCrossing(*previousPoint, currentPoint, triggerLine->y, triggerX, triggerTimeUs)) {
@@ -434,6 +525,7 @@ void StateEstimator::updateTriggerPoseFields()
     m_currentPose.hasNextTrigger = triggerLine != nullptr;
     m_currentPose.nextTriggerIndex = triggerLine ? triggerLine->lineIndex : 0;
     m_currentPose.nextTriggerLineY = triggerLine ? triggerLine->y : 0.0;
+    m_currentPose.isInFineMode = m_inFineMode;
 
     if (m_hasPrediction && m_predictedTriggerVectorIndex == m_nextTriggerVectorIndex) {
         m_currentPose.nextTriggerCountdownSec = m_predictedCountdownSec;
@@ -451,6 +543,9 @@ void StateEstimator::updateTriggerPoseFields()
     m_currentPose.lastTriggerX = m_lastTriggerX;
     m_currentPose.lastTriggerY = m_lastTriggerY;
     m_currentPose.lastTriggerTimeUs = m_lastTriggerTimeUs;
+    m_currentPose.lastTriggerLineIndex = m_lastTriggerLineIndex;
+    m_currentPose.lastTriggerDirection = m_lastTriggerDirection;
+    m_currentPose.lastTriggerLineY = m_lastTriggerLineY;
     m_currentPose.triggerSequence = m_triggerSequence;
 }
 
@@ -507,7 +602,11 @@ int StateEstimator::findNextTriggerIndex(double currentY, int direction) const
 
     if (direction > 0) {
         for (int i = 0; i < static_cast<int>(m_triggerLines.size()); ++i) {
-            if (m_triggerLines[static_cast<size_t>(i)].y >= currentY - kEpsilon) {
+            const TriggerLineSpec& line = m_triggerLines[static_cast<size_t>(i)];
+            if (line.direction != direction) {
+                continue;
+            }
+            if (line.y >= currentY - kEpsilon) {
                 return i;
             }
         }
@@ -515,7 +614,11 @@ int StateEstimator::findNextTriggerIndex(double currentY, int direction) const
     }
 
     for (int i = static_cast<int>(m_triggerLines.size()) - 1; i >= 0; --i) {
-        if (m_triggerLines[static_cast<size_t>(i)].y <= currentY + kEpsilon) {
+        const TriggerLineSpec& line = m_triggerLines[static_cast<size_t>(i)];
+        if (line.direction != direction) {
+            continue;
+        }
+        if (line.y <= currentY + kEpsilon) {
             return i;
         }
     }
@@ -558,17 +661,27 @@ void StateEstimator::advancePastCurrentPosition(double currentY, int direction, 
             break;
         }
 
+        if (triggerLine->direction != direction) {
+            if (m_predictedTriggerVectorIndex == m_nextTriggerVectorIndex) {
+                clearTriggerPrediction();
+            }
+            m_nextTriggerVectorIndex += direction;
+            m_inFineMode = false;
+            continue;
+        }
+
         const double signedDistance = static_cast<double>(direction) * (triggerLine->y - currentY);
         if (signedDistance >= -m_deadzoneM) {
             break;
         }
 
         if (logSkip) {
-            LOG_WARN("Skipping missed trigger line: line=%d, lineY=%.4f, currentY=%.4f, direction=%d",
+            LOG_WARN("Skipping missed trigger line: line=%d, block=%d, direction=%d, lineY=%.4f, currentY=%.4f",
                      triggerLine->lineIndex,
+                     triggerLine->blockId,
+                     triggerLine->direction,
                      triggerLine->y,
-                     currentY,
-                     direction);
+                     currentY);
         }
 
         if (m_predictedTriggerVectorIndex == m_nextTriggerVectorIndex) {
@@ -611,18 +724,24 @@ bool StateEstimator::interpolateCrossing(const LocalPoint& p1,
 
 void StateEstimator::commitTrigger(double triggerX, double triggerY, qint64 triggerTimeUs, const char* source)
 {
+    const TriggerLineSpec* triggerLine = currentTriggerLine();
+
     m_hasLastTriggerEvent = true;
     m_lastTriggerX = triggerX;
     m_lastTriggerY = triggerY;
     m_lastTriggerTimeUs = triggerTimeUs;
+    m_lastTriggerLineIndex = triggerLine ? triggerLine->lineIndex : 0;
+    m_lastTriggerDirection = triggerLine ? triggerLine->direction : 0;
+    m_lastTriggerLineY = triggerLine ? triggerLine->y : triggerY;
     ++m_triggerSequence;
 
     clearTriggerPrediction();
 
-    LOG_INFO("Trigger committed [%s]: seq=%d, line=%d, point=(%.4f, %.4f), timeUs=%lld",
+    LOG_INFO("Trigger committed [%s]: seq=%d, line=%d, direction=%d, point=(%.4f, %.4f), timeUs=%lld",
              source ? source : "unknown",
              m_triggerSequence,
-             currentTriggerLine() ? currentTriggerLine()->lineIndex : 0,
+             m_lastTriggerLineIndex,
+             m_lastTriggerDirection,
              triggerX,
              triggerY,
              static_cast<long long>(triggerTimeUs));
@@ -674,6 +793,9 @@ void StateEstimator::reset()
     m_lastTriggerX = 0.0;
     m_lastTriggerY = 0.0;
     m_lastTriggerTimeUs = 0;
+    m_lastTriggerLineIndex = 0;
+    m_lastTriggerDirection = 0;
+    m_lastTriggerLineY = 0.0;
     m_triggerSequence = 0;
     updateTriggerPoseFields();
 

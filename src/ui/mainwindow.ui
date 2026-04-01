@@ -11,14 +11,14 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>高精度农业自动导航与作业控制系统</string>
+   <string>干就完了 v0.2</string>
   </property>
   <widget class="QWidget" name="centralwidget">
    <layout class="QVBoxLayout" name="verticalLayout">
     <item>
      <widget class="QTabWidget" name="tabWidget">
       <property name="currentIndex">
-       <number>1</number>
+       <number>2</number>
       </property>
       <widget class="QWidget" name="tab_navigation">
        <attribute name="title">
@@ -127,7 +127,7 @@
                <item>
                 <widget class="QPushButton" name="plcDisconnectButton">
                  <property name="text">
-                  <string>测试</string>
+                  <string>断开</string>
                  </property>
                 </widget>
                </item>
@@ -336,7 +336,7 @@
              <item row="1" column="1">
               <widget class="QLineEdit" name="plcPortLineEdit">
                <property name="text">
-                <string>502</string>
+                <string>5020</string>
                </property>
               </widget>
              </item>
@@ -355,59 +355,366 @@
         <item>
          <widget class="QGroupBox" name="plcGroupBox">
           <property name="title">
-           <string>PLC数据</string>
+           <string>PLC寄存器</string>
           </property>
-          <layout class="QHBoxLayout" name="plcLayout">
+          <layout class="QVBoxLayout" name="plcLayout">
            <item>
-            <widget class="QGroupBox" name="plcInputGroupBox">
-             <property name="sizePolicy">
-              <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
-               <horstretch>1</horstretch>
-               <verstretch>0</verstretch>
-              </sizepolicy>
-             </property>
-             <property name="title">
-              <string>读取数据</string>
-             </property>
-             <layout class="QVBoxLayout" name="plcInputLayout">
-              <item>
-               <widget class="QLabel" name="plcInputDataLabel">
-                <property name="text">
-                 <string>无数据</string>
-                </property>
-               </widget>
-              </item>
-             </layout>
-            </widget>
+            <layout class="QHBoxLayout" name="plcRegisterBox1_2">
+             <item>
+              <widget class="QLabel" name="plcAddr1Label">
+               <property name="text">
+                <string>寄存器地址:</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QLineEdit" name="plcAddr1LineEdit">
+               <property name="text">
+                <string>17</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QLabel" name="plcCmdValue1Label">
+               <property name="text">
+                <string>指令值:</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QLineEdit" name="plcCmdValue1LineEdit">
+               <property name="text">
+                <string>1</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QLabel" name="plcReadValue1TitleLabel">
+               <property name="text">
+                <string>读取值:</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QLabel" name="plcReadValue1Label">
+               <property name="text">
+                <string>--</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QPushButton" name="plcSave1Button">
+               <property name="text">
+                <string>保存</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QPushButton" name="plcSend1Button">
+               <property name="text">
+                <string>发送</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QCheckBox" name="forwardTriggerLine1">
+               <property name="text">
+                <string>正向触发线</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QCheckBox" name="reverseTriggerLine1">
+               <property name="text">
+                <string>反向触发线</string>
+               </property>
+              </widget>
+             </item>
+            </layout>
            </item>
            <item>
-            <widget class="QGroupBox" name="plcOutputGroupBox">
-             <property name="sizePolicy">
-              <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
-               <horstretch>1</horstretch>
-               <verstretch>0</verstretch>
-              </sizepolicy>
-             </property>
-             <property name="title">
-              <string>发送指令</string>
-             </property>
-             <layout class="QVBoxLayout" name="plcOutputLayout">
-              <item>
-               <widget class="QTextEdit" name="plcCommandTextEdit">
-                <property name="plainText">
-                 <string/>
-                </property>
-               </widget>
-              </item>
-              <item>
-               <widget class="QPushButton" name="plcSendButton">
-                <property name="text">
-                 <string>发送</string>
-                </property>
-               </widget>
-              </item>
-             </layout>
-            </widget>
+            <layout class="QHBoxLayout" name="plcRegisterBox2_2">
+             <item>
+              <widget class="QLabel" name="plcAddr2Label">
+               <property name="text">
+                <string>寄存器地址:</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QLineEdit" name="plcAddr2LineEdit">
+               <property name="text">
+                <string>31</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QLabel" name="plcCmdValue2Label">
+               <property name="text">
+                <string>指令值:</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QLineEdit" name="plcCmdValue2LineEdit"/>
+             </item>
+             <item>
+              <widget class="QLabel" name="plcReadValue2TitleLabel">
+               <property name="text">
+                <string>读取值:</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QLabel" name="plcReadValue2Label">
+               <property name="text">
+                <string>--</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QPushButton" name="plcSave2Button">
+               <property name="text">
+                <string>保存</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QPushButton" name="plcSend2Button">
+               <property name="text">
+                <string>发送</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QCheckBox" name="forwardTriggerLine2">
+               <property name="text">
+                <string>正向触发线</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QCheckBox" name="reverseTriggerLine2">
+               <property name="text">
+                <string>反向触发线</string>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </item>
+           <item>
+            <layout class="QHBoxLayout" name="plcRegisterBox3_2">
+             <item>
+              <widget class="QLabel" name="plcAddr3Label">
+               <property name="text">
+                <string>寄存器地址:</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QLineEdit" name="plcAddr3LineEdit">
+               <property name="text">
+                <string>10</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QLabel" name="plcCmdValue3Label">
+               <property name="text">
+                <string>指令值:</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QLineEdit" name="plcCmdValue3LineEdit"/>
+             </item>
+             <item>
+              <widget class="QLabel" name="plcReadValue3TitleLabel">
+               <property name="text">
+                <string>读取值:</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QLabel" name="plcReadValue3Label">
+               <property name="text">
+                <string>--</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QPushButton" name="plcSave3Button">
+               <property name="text">
+                <string>保存</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QPushButton" name="plcSend3Button">
+               <property name="text">
+                <string>发送</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QCheckBox" name="forwardTriggerLine3">
+               <property name="text">
+                <string>正向触发线</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QCheckBox" name="reverseTriggerLine3">
+               <property name="text">
+                <string>反向触发线</string>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </item>
+           <item>
+            <layout class="QHBoxLayout" name="plcRegisterBox4_2">
+             <item>
+              <widget class="QLabel" name="plcAddr4Label">
+               <property name="text">
+                <string>寄存器地址:</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QLineEdit" name="plcAddr4LineEdit">
+               <property name="text">
+                <string>11</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QLabel" name="plcCmdValue4Label">
+               <property name="text">
+                <string>指令值:</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QLineEdit" name="plcCmdValue4LineEdit"/>
+             </item>
+             <item>
+              <widget class="QLabel" name="plcReadValue4TitleLabel">
+               <property name="text">
+                <string>读取值:</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QLabel" name="plcReadValue4Label">
+               <property name="text">
+                <string>--</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QPushButton" name="plcSave4Button">
+               <property name="text">
+                <string>保存</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QPushButton" name="plcSend4Button">
+               <property name="text">
+                <string>发送</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QCheckBox" name="forwardTriggerLine4">
+               <property name="text">
+                <string>正向触发线</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QCheckBox" name="reverseTriggerLine4">
+               <property name="text">
+                <string>反向触发线</string>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </item>
+           <item>
+            <layout class="QHBoxLayout" name="plcRegisterBox5_2">
+             <item>
+              <widget class="QLabel" name="plcAddr5Label">
+               <property name="text">
+                <string>寄存器地址:</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QLineEdit" name="plcAddr5LineEdit">
+               <property name="text">
+                <string>0</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QLabel" name="plcCmdValue5Label">
+               <property name="text">
+                <string>指令值:</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QLineEdit" name="plcCmdValue5LineEdit">
+               <property name="text">
+                <string>1</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QLabel" name="plcReadValue5TitleLabel">
+               <property name="text">
+                <string>读取值:</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QLabel" name="plcReadValue5Label">
+               <property name="text">
+                <string>--</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QPushButton" name="plcSave5Button">
+               <property name="text">
+                <string>保存</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QPushButton" name="plcSend5Button">
+               <property name="text">
+                <string>发送</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QCheckBox" name="forwardTriggerLine5">
+               <property name="text">
+                <string>正向触发线</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QCheckBox" name="reverseTriggerLine5">
+               <property name="text">
+                <string>反向触发线</string>
+               </property>
+              </widget>
+             </item>
+            </layout>
            </item>
           </layout>
          </widget>
@@ -423,7 +730,7 @@
              <property name="minimumSize">
               <size>
                <width>0</width>
-               <height>200</height>
+               <height>300</height>
               </size>
              </property>
             </widget>
@@ -436,7 +743,7 @@
           <item>
            <widget class="QGroupBox" name="groupBox">
             <property name="title">
-             <string>播种区域</string>
+             <string>播种状态参数</string>
             </property>
             <layout class="QGridLayout" name="formLayout">
              <item row="0" column="0">
@@ -447,21 +754,9 @@
               </widget>
              </item>
              <item row="0" column="1">
-              <widget class="QDoubleSpinBox" name="areaLengthSpinBox">
-               <property name="decimals">
-                <number>1</number>
-               </property>
-               <property name="minimum">
-                <double>1.000000000000000</double>
-               </property>
-               <property name="maximum">
-                <double>1000.000000000000000</double>
-               </property>
-               <property name="singleStep">
-                <double>1.000000000000000</double>
-               </property>
-               <property name="value">
-                <double>100.000000000000000</double>
+              <widget class="QLabel" name="areaLengthLabelValue">
+               <property name="text">
+                <string>100.0</string>
                </property>
               </widget>
              </item>
@@ -473,139 +768,99 @@
               </widget>
              </item>
              <item row="0" column="3">
-              <widget class="QDoubleSpinBox" name="areaWidthSpinBox">
-               <property name="decimals">
-                <number>1</number>
-               </property>
-               <property name="minimum">
-                <double>1.000000000000000</double>
-               </property>
-               <property name="maximum">
-                <double>2000.000000000000000</double>
-               </property>
-               <property name="singleStep">
-                <double>10.000000000000000</double>
-               </property>
-               <property name="value">
-                <double>1000.000000000000000</double>
+              <widget class="QLabel" name="areaWidthLabelValue">
+               <property name="text">
+                <string>1000.0</string>
                </property>
               </widget>
              </item>
              <item row="1" column="0">
               <widget class="QLabel" name="label">
                <property name="text">
-                <string>垄矩 (m):</string>
+                <string>当前小区长度 (m):</string>
                </property>
               </widget>
              </item>
              <item row="1" column="1">
-              <widget class="QDoubleSpinBox" name="rowSpacingSpinBox">
-               <property name="decimals">
-                <number>1</number>
-               </property>
-               <property name="minimum">
-                <double>0.100000000000000</double>
-               </property>
-               <property name="maximum">
-                <double>2.000000000000000</double>
-               </property>
-               <property name="singleStep">
-                <double>0.100000000000000</double>
-               </property>
-               <property name="value">
-                <double>0.600000000000000</double>
+              <widget class="QLabel" name="rowSpacingLabelValue">
+               <property name="text">
+                <string>5.0</string>
                </property>
               </widget>
              </item>
              <item row="1" column="2">
               <widget class="QLabel" name="fieldLengthLabel">
                <property name="text">
-                <string>小区长度 (m):</string>
+                <string>下个小区长度 (m):</string>
                </property>
               </widget>
              </item>
              <item row="1" column="3">
-              <widget class="QDoubleSpinBox" name="fieldLengthSpinBox">
-               <property name="decimals">
-                <number>1</number>
-               </property>
-               <property name="minimum">
-                <double>1.000000000000000</double>
-               </property>
-               <property name="maximum">
-                <double>100.000000000000000</double>
-               </property>
-               <property name="singleStep">
-                <double>0.100000000000000</double>
-               </property>
-               <property name="value">
-                <double>5.000000000000000</double>
+              <widget class="QLabel" name="fieldLengthLabelValue">
+               <property name="text">
+                <string>5.0</string>
                </property>
               </widget>
              </item>
              <item row="2" column="0">
               <widget class="QLabel" name="label_2">
                <property name="text">
-                <string>过道宽度 (m):</string>
+                <string>当前过道宽度 (m):</string>
                </property>
               </widget>
              </item>
              <item row="2" column="1">
-              <widget class="QDoubleSpinBox" name="headlandWidthSpinBox">
-               <property name="decimals">
-                <number>1</number>
-               </property>
-               <property name="minimum">
-                <double>1.000000000000000</double>
-               </property>
-               <property name="maximum">
-                <double>5.000000000000000</double>
-               </property>
-               <property name="singleStep">
-                <double>0.100000000000000</double>
-               </property>
-               <property name="value">
-                <double>1.000000000000000</double>
+              <widget class="QLabel" name="headlandWidthLabelValue">
+               <property name="text">
+                <string>1.0</string>
                </property>
               </widget>
              </item>
              <item row="2" column="2">
               <widget class="QLabel" name="label_3">
                <property name="text">
-                <string>小区内垄数:</string>
+                <string>下个过道宽度 (m):</string>
                </property>
               </widget>
              </item>
              <item row="2" column="3">
-              <widget class="QSpinBox" name="rowsPerBlockSpinBox">
-               <property name="minimum">
-                <number>1</number>
-               </property>
-               <property name="maximum">
-                <number>50</number>
-               </property>
-               <property name="value">
-                <number>2</number>
+              <widget class="QLabel" name="rowsPerBlockLabelValue">
+               <property name="text">
+                <string>2</string>
                </property>
               </widget>
              </item>
              <item row="3" column="0">
               <widget class="QLabel" name="seedsPerBlockLabel">
                <property name="text">
-                <string>小区内播种数:</string>
+                <string>当前株距(cm):</string>
                </property>
               </widget>
              </item>
              <item row="3" column="1">
-              <widget class="QSpinBox" name="seedsPerBlockSpinBox">
-               <property name="minimum">
-                <number>1</number>
+              <widget class="QLabel" name="seedsPerBlockLabelValue">
+               <property name="text">
+                <string>5</string>
                </property>
-               <property name="maximum">
-                <number>10000</number>
+              </widget>
+             </item>
+             <item row="3" column="2">
+              <widget class="QLabel" name="triggerAheadLabel">
+               <property name="visible">
+                <bool>false</bool>
                </property>
-               <property name="value">
-                <number>25</number>
+               <property name="text">
+                <string>触发线提前量(m):</string>
+               </property>
+              </widget>
+             </item>
+             <item row="3" column="3">
+              <widget class="QLabel" name="triggerAheadLabelValue">
+               <property name="visible">
+                <bool>false</bool>
+               </property>
+               <property name="text">
+                <string>1.0</string>
                </property>
               </widget>
              </item>
@@ -619,210 +874,30 @@
             </property>
             <layout class="QGridLayout" name="pathPlanningFormLayout">
              <item row="0" column="0">
-              <widget class="QLabel" name="oPointLatitudeLabel">
+              <widget class="QLabel" name="oPointLabel">
                <property name="text">
-                <string>O点纬度:</string>
+                <string>O点经纬度:</string>
                </property>
               </widget>
              </item>
              <item row="0" column="1">
-              <widget class="QDoubleSpinBox" name="oPointLatitudeSpinBox">
-               <property name="decimals">
-                <number>6</number>
-               </property>
-               <property name="minimum">
-                <double>-90.000000000000000</double>
-               </property>
-               <property name="maximum">
-                <double>90.000000000000000</double>
-               </property>
-               <property name="singleStep">
-                <double>0.000001000000000</double>
-               </property>
-               <property name="value">
-                <double>0.000000000000000</double>
-               </property>
-              </widget>
-             </item>
-             <item row="0" column="2">
-              <widget class="QLabel" name="oPointLongitudeLabel">
+              <widget class="QLineEdit" name="oPointLineEdit">
                <property name="text">
-                <string>O点经度:</string>
-               </property>
-              </widget>
-             </item>
-             <item row="0" column="3">
-              <widget class="QDoubleSpinBox" name="oPointLongitudeSpinBox">
-               <property name="decimals">
-                <number>6</number>
-               </property>
-               <property name="minimum">
-                <double>-180.000000000000000</double>
-               </property>
-               <property name="maximum">
-                <double>180.000000000000000</double>
-               </property>
-               <property name="singleStep">
-                <double>0.000001000000000</double>
-               </property>
-               <property name="value">
-                <double>0.000000000000000</double>
+                <string>0.000000,0.000000</string>
                </property>
               </widget>
              </item>
              <item row="1" column="0">
-              <widget class="QLabel" name="aPointLatitudeLabel">
+              <widget class="QLabel" name="aPointLabel">
                <property name="text">
-                <string>A点纬度:</string>
+                <string>A点经纬度:</string>
                </property>
               </widget>
              </item>
              <item row="1" column="1">
-              <widget class="QDoubleSpinBox" name="aPointLatitudeSpinBox">
-               <property name="decimals">
-                <number>6</number>
-               </property>
-               <property name="minimum">
-                <double>-90.000000000000000</double>
-               </property>
-               <property name="maximum">
-                <double>90.000000000000000</double>
-               </property>
-               <property name="singleStep">
-                <double>0.000001000000000</double>
-               </property>
-               <property name="value">
-                <double>0.000001000000000</double>
-               </property>
-              </widget>
-             </item>
-             <item row="1" column="2">
-              <widget class="QLabel" name="aPointLongitudeLabel">
+              <widget class="QLineEdit" name="aPointLineEdit">
                <property name="text">
-                <string>A点经度:</string>
-               </property>
-              </widget>
-             </item>
-             <item row="1" column="3">
-              <widget class="QDoubleSpinBox" name="aPointLongitudeSpinBox">
-               <property name="decimals">
-                <number>6</number>
-               </property>
-               <property name="minimum">
-                <double>-180.000000000000000</double>
-               </property>
-               <property name="maximum">
-                <double>180.000000000000000</double>
-               </property>
-               <property name="singleStep">
-                <double>0.000001000000000</double>
-               </property>
-               <property name="value">
-                <double>0.000000000000000</double>
-               </property>
-              </widget>
-             </item>
-             <item row="2" column="0">
-              <widget class="QLabel" name="speedPulseFactorLabel">
-               <property name="text">
-                <string>触发距离系数:</string>
-               </property>
-              </widget>
-             </item>
-             <item row="2" column="1">
-              <widget class="QDoubleSpinBox" name="speedPulseFactorSpinBox">
-               <property name="decimals">
-                <number>2</number>
-               </property>
-               <property name="minimum">
-                <double>0.000000000000000</double>
-               </property>
-               <property name="maximum">
-                <double>100.000000000000000</double>
-               </property>
-               <property name="singleStep">
-                <double>0.010000000000000</double>
-               </property>
-               <property name="value">
-                <double>1.000000000000000</double>
-               </property>
-              </widget>
-             </item>
-             <item row="2" column="2">
-              <widget class="QLabel" name="speedFrequencyFactorLabel">
-               <property name="text">
-                <string>转速系数:</string>
-               </property>
-              </widget>
-             </item>
-             <item row="2" column="3">
-              <widget class="QDoubleSpinBox" name="speedFrequencyFactorSpinBox">
-               <property name="decimals">
-                <number>2</number>
-               </property>
-               <property name="minimum">
-                <double>0.000000000000000</double>
-               </property>
-               <property name="maximum">
-                <double>100.000000000000000</double>
-               </property>
-               <property name="singleStep">
-                <double>0.010000000000000</double>
-               </property>
-               <property name="value">
-                <double>1.000000000000000</double>
-               </property>
-              </widget>
-             </item>
-             <item row="3" column="0">
-              <widget class="QLabel" name="triggerDistanceLabel">
-               <property name="text">
-                <string>开始触发位置(m):</string>
-               </property>
-              </widget>
-             </item>
-             <item row="3" column="1">
-              <widget class="QDoubleSpinBox" name="triggerDistanceSpinBox">
-               <property name="decimals">
-                <number>1</number>
-               </property>
-               <property name="minimum">
-                <double>0.100000000000000</double>
-               </property>
-               <property name="maximum">
-                <double>1000.000000000000000</double>
-               </property>
-               <property name="singleStep">
-                <double>0.100000000000000</double>
-               </property>
-               <property name="value">
-                <double>1.000000000000000</double>
-               </property>
-              </widget>
-             </item>
-             <item row="3" column="2">
-              <widget class="QLabel" name="stopTriggerDistanceLabel">
-               <property name="text">
-                <string>结束触发位置(m):</string>
-               </property>
-              </widget>
-             </item>
-             <item row="3" column="3">
-              <widget class="QDoubleSpinBox" name="stopTriggerDistanceSpinBox">
-               <property name="decimals">
-                <number>1</number>
-               </property>
-               <property name="minimum">
-                <double>0.100000000000000</double>
-               </property>
-               <property name="maximum">
-                <double>1000.000000000000000</double>
-               </property>
-               <property name="singleStep">
-                <double>0.100000000000000</double>
-               </property>
-               <property name="value">
-                <double>0.500000000000000</double>
+                <string>0.000001,0.000000</string>
                </property>
               </widget>
              </item>
@@ -836,7 +911,17 @@
           <item>
            <widget class="QPushButton" name="generateConfigButton">
             <property name="text">
-             <string>生成触发线</string>
+             <string>生成本地坐标系</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QCheckBox" name="trajectoryVisibleCheckBox">
+            <property name="text">
+             <string>显示运动轨迹</string>
+            </property>
+            <property name="checked">
+             <bool>false</bool>
             </property>
            </widget>
           </item>
@@ -863,19 +948,6 @@
           </item>
          </layout>
         </item>
-        <item>
-         <spacer name="verticalSpacer">
-          <property name="orientation">
-           <enum>Qt::Orientation::Vertical</enum>
-          </property>
-          <property name="sizeHint" stdset="0">
-           <size>
-            <width>20</width>
-            <height>40</height>
-           </size>
-          </property>
-         </spacer>
-        </item>
        </layout>
       </widget>
       <widget class="QWidget" name="tab_data">
@@ -886,162 +958,43 @@
         <item>
          <widget class="QGroupBox" name="databaseGroupBox">
           <property name="title">
-           <string>数据库连接</string>
+           <string>播种参数</string>
           </property>
           <layout class="QVBoxLayout" name="databaseLayout">
            <item>
             <widget class="QLabel" name="databaseStatusLabel">
              <property name="text">
-              <string>数据库状态: 未连接</string>
+              <string>播种计划：未加载</string>
              </property>
             </widget>
            </item>
            <item>
-            <widget class="QPushButton" name="connectDatabaseButton">
-             <property name="text">
-              <string>连接数据库</string>
-             </property>
-            </widget>
-           </item>
-          </layout>
-         </widget>
-        </item>
-        <item>
-         <widget class="QGroupBox" name="jobInfoGroupBox">
-          <property name="title">
-           <string>作业信息</string>
-          </property>
-          <layout class="QHBoxLayout" name="jobInfoLayout">
-           <item>
-            <widget class="QLabel" name="jobIdLabel">
-             <property name="text">
-              <string>作业ID:</string>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QLabel" name="jobIdValueLabel">
-             <property name="text">
-              <string>--</string>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <spacer name="horizontalSpacer_4">
-             <property name="orientation">
-              <enum>Qt::Orientation::Horizontal</enum>
-             </property>
-             <property name="sizeHint" stdset="0">
-              <size>
-               <width>20</width>
-               <height>1</height>
-              </size>
-             </property>
-            </spacer>
-           </item>
-           <item>
-            <widget class="QLabel" name="jobDateLabel">
-             <property name="text">
-              <string>日期:</string>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QLabel" name="jobDateValueLabel">
-             <property name="text">
-              <string>--</string>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <spacer name="horizontalSpacer_5">
-             <property name="orientation">
-              <enum>Qt::Orientation::Horizontal</enum>
-             </property>
-             <property name="sizeHint" stdset="0">
-              <size>
-               <width>20</width>
-               <height>1</height>
-              </size>
-             </property>
-            </spacer>
-           </item>
-           <item>
-            <widget class="QLabel" name="jobAreaLabel">
-             <property name="text">
-              <string>面积:</string>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QLabel" name="jobAreaValueLabel">
-             <property name="text">
-              <string>--</string>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <spacer name="horizontalSpacer_6">
-             <property name="orientation">
-              <enum>Qt::Orientation::Horizontal</enum>
-             </property>
-             <property name="sizeHint" stdset="0">
-              <size>
-               <width>20</width>
-               <height>1</height>
-              </size>
-             </property>
-            </spacer>
-           </item>
-           <item>
-            <widget class="QLabel" name="jobSeedlingsLabel">
-             <property name="text">
-              <string>播种数:</string>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QLabel" name="jobSeedlingsValueLabel">
-             <property name="text">
-              <string>--</string>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <spacer name="horizontalSpacer_7">
-             <property name="orientation">
-              <enum>Qt::Orientation::Horizontal</enum>
-             </property>
-             <property name="sizeHint" stdset="0">
-              <size>
-               <width>40</width>
-               <height>1</height>
-              </size>
-             </property>
-            </spacer>
-           </item>
-          </layout>
-         </widget>
-        </item>
-        <item>
-         <widget class="QGroupBox" name="operationControlGroupBox">
-          <property name="title">
-           <string>作业控制</string>
-          </property>
-          <layout class="QVBoxLayout" name="operationControlLayout">
-           <item>
-            <layout class="QHBoxLayout" name="seedingStatusLayout">
+            <layout class="QHBoxLayout">
              <item>
-              <widget class="QLabel" name="seedingStatusLabel">
+              <widget class="QPushButton" name="connectDatabaseButton">
                <property name="text">
-                <string>播种状态:</string>
+                <string>载入小区表</string>
                </property>
               </widget>
              </item>
              <item>
-              <widget class="QLabel" name="seedingStatusIndicator">
+              <widget class="QPushButton" name="generateSeedingPlanButton">
                <property name="text">
-                <string>🔴 未播种</string>
+                <string>生成播种计划</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QPushButton" name="antennaCalibrationButton">
+               <property name="text">
+                <string>天线校准</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QPushButton" name="lockSeedingPlanButton">
+               <property name="text">
+                <string>锁定播种计划</string>
                </property>
               </widget>
              </item>
@@ -1052,72 +1005,30 @@
                </property>
                <property name="sizeHint" stdset="0">
                 <size>
-                 <width>40</width>
-                 <height>1</height>
+                 <width>20</width>
+                 <height>20</height>
                 </size>
                </property>
               </spacer>
              </item>
-            </layout>
-           </item>
-           <item>
-            <widget class="QListWidget" name="fieldListWidget">
-             <property name="minimumSize">
-              <size>
-               <width>0</width>
-               <height>50</height>
-              </size>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <layout class="QGridLayout" name="controlDataGridLayout">
-             <item row="0" column="0">
-              <widget class="QLabel" name="pathPlanningLabel">
+             <item>
+              <widget class="QLabel" name="configFileLabel">
                <property name="text">
-                <string>路径规划:</string>
+                <string>配播种计划管理</string>
                </property>
               </widget>
              </item>
-             <item row="0" column="1">
-              <widget class="QLabel" name="currentSectionLabel">
+             <item>
+              <widget class="QPushButton" name="saveConfigFileButton">
                <property name="text">
-                <string>当前区间: 0</string>
+                <string>保存计划</string>
                </property>
               </widget>
              </item>
-             <item row="1" column="1">
-              <widget class="QLabel" name="targetPointLabel">
+             <item>
+              <widget class="QPushButton" name="loadConfigFileButton">
                <property name="text">
-                <string>目标点: (0.00, 0.00)</string>
-               </property>
-              </widget>
-             </item>
-             <item row="2" column="1">
-              <widget class="QLabel" name="triggerPointLabel">
-               <property name="text">
-                <string>触发点: (0.00, 0.00)</string>
-               </property>
-              </widget>
-             </item>
-             <item row="0" column="2">
-              <widget class="QLabel" name="operationDataLabel">
-               <property name="text">
-                <string>作业数据:</string>
-               </property>
-              </widget>
-             </item>
-             <item row="1" column="2">
-              <widget class="QLabel" name="seedlingsCountLabel">
-               <property name="text">
-                <string>Seedlings: 0</string>
-               </property>
-              </widget>
-             </item>
-             <item row="2" column="2">
-              <widget class="QLabel" name="operationProgressLabel">
-               <property name="text">
-                <string>进度: 0%</string>
+                <string>加载计划</string>
                </property>
               </widget>
              </item>
@@ -1127,29 +1038,345 @@
          </widget>
         </item>
         <item>
-         <layout class="QHBoxLayout" name="horizontalLayout_2">
-          <item>
-           <widget class="QPushButton" name="startButton">
-            <property name="text">
-             <string>开始</string>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QPushButton" name="stopButton">
-            <property name="text">
-             <string>停止</string>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QPushButton" name="configButton">
-            <property name="text">
-             <string>配置</string>
-            </property>
-           </widget>
-          </item>
-         </layout>
+         <widget class="QGroupBox" name="jobInfoGroupBox">
+          <property name="title">
+           <string>小区配置表</string>
+          </property>
+          <layout class="QHBoxLayout" name="jobInfoLayout">
+           <item>
+            <widget class="QTableWidget" name="cellConfigTableWidget">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+               <horstretch>3</horstretch>
+               <verstretch>1</verstretch>
+              </sizepolicy>
+             </property>
+             <property name="minimumSize">
+              <size>
+               <width>0</width>
+               <height>200</height>
+              </size>
+             </property>
+             <property name="rowCount">
+              <number>0</number>
+             </property>
+             <property name="columnCount">
+              <number>7</number>
+             </property>
+             <attribute name="verticalHeaderVisible">
+              <bool>false</bool>
+             </attribute>
+             <column>
+              <property name="text">
+               <string>序号</string>
+              </property>
+             </column>
+             <column>
+              <property name="text">
+               <string>方号</string>
+              </property>
+             </column>
+             <column>
+              <property name="text">
+               <string>种类</string>
+              </property>
+             </column>
+             <column>
+              <property name="text">
+               <string>正区宽度(m)</string>
+              </property>
+             </column>
+             <column>
+              <property name="text">
+               <string>过道宽度(m)</string>
+              </property>
+             </column>
+             <column>
+              <property name="text">
+               <string>株距(cm)</string>
+              </property>
+             </column>
+             <column>
+              <property name="text">
+               <string>垄数</string>
+              </property>
+             </column>
+            </widget>
+           </item>
+           <item>
+            <widget class="QGroupBox" name="seederParamsGroupBox">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+               <horstretch>1</horstretch>
+               <verstretch>1</verstretch>
+              </sizepolicy>
+             </property>
+             <property name="title">
+              <string>排种器参数</string>
+             </property>
+             <layout class="QGridLayout" name="seederParamsLayout">
+              <item row="0" column="0">
+               <widget class="QLabel" name="rowSpacingLabel">
+                <property name="text">
+                 <string>垄距(m):</string>
+                </property>
+               </widget>
+              </item>
+              <item row="0" column="1">
+               <widget class="QLineEdit" name="rowSpacingLineEdit">
+                <property name="text">
+                 <string>0.6</string>
+                </property>
+               </widget>
+              </item>
+              <item row="1" column="0">
+               <widget class="QLabel" name="seedHoleDistanceLabel">
+                <property name="text">
+                 <string>排种器孔距(cm):</string>
+                </property>
+               </widget>
+              </item>
+              <item row="1" column="1">
+               <widget class="QLineEdit" name="seedHoleDistanceLineEdit">
+                <property name="text">
+                 <string>3.0</string>
+                </property>
+               </widget>
+              </item>
+              <item row="2" column="0">
+               <widget class="QLabel" name="seedSpeedRatioLabel">
+                <property name="text">
+                 <string>转速参数(θ,ω):</string>
+                </property>
+               </widget>
+              </item>
+              <item row="2" column="1">
+               <widget class="QLineEdit" name="seedSpeedRatioLineEdit">
+                <property name="text">
+                 <string>10,0</string>
+                </property>
+               </widget>
+              </item>
+              <item row="3" column="0">
+               <widget class="QLabel" name="seedRadiusLabel">
+                <property name="text">
+                 <string>排种器半径(cm):</string>
+                </property>
+               </widget>
+              </item>
+              <item row="3" column="1">
+               <widget class="QLineEdit" name="seedRadiusLineEdit">
+                <property name="text">
+                 <string>20</string>
+                </property>
+               </widget>
+              </item>
+              <item row="4" column="0">
+               <widget class="QLabel" name="seedAdsorbCountLabel">
+                <property name="text">
+                 <string>排种器吸附数N:</string>
+                </property>
+               </widget>
+              </item>
+              <item row="4" column="1">
+               <widget class="QLineEdit" name="seedAdsorbCountLineEdit">
+                <property name="text">
+                 <string>8</string>
+                </property>
+               </widget>
+              </item>
+              <item row="5" column="0">
+               <widget class="QLabel" name="seedDropHeightLabel">
+                <property name="text">
+                 <string>落种口高度(m):</string>
+                </property>
+               </widget>
+              </item>
+              <item row="5" column="1">
+               <widget class="QLineEdit" name="seedDropHeightLineEdit">
+                <property name="text">
+                 <string>0.3</string>
+                </property>
+               </widget>
+              </item>
+              <item row="6" column="0">
+               <widget class="QLabel" name="antennaArmLabel">
+                <property name="text">
+                 <string>天线杆臂(X,Y,Z):</string>
+                </property>
+               </widget>
+              </item>
+              <item row="6" column="1">
+               <widget class="QLineEdit" name="antennaArmLineEdit">
+                <property name="text">
+                 <string>0,0,0</string>
+                </property>
+               </widget>
+              </item>
+              <item row="7" column="0">
+               <widget class="QLabel" name="distancePulseRatioLabel">
+                <property name="text">
+                 <string>距离脉冲比例(μ):</string>
+                </property>
+               </widget>
+              </item>
+              <item row="7" column="1">
+               <widget class="QLineEdit" name="distancePulseRatioLineEdit">
+                <property name="text">
+                 <string>125</string>
+                </property>
+               </widget>
+              </item>
+              <item row="8" column="0">
+               <widget class="QLabel" name="signalTransmissionDelayLabel">
+                <property name="text">
+                 <string>信号传输延迟(ms):</string>
+                </property>
+               </widget>
+              </item>
+              <item row="8" column="1">
+               <widget class="QLineEdit" name="signalTransmissionDelayLineEdit">
+                <property name="text">
+                 <string>0</string>
+                </property>
+               </widget>
+              </item>
+              <item row="9" column="0">
+               <widget class="QCheckBox" name="reverseOrderCheckBox">
+                <property name="minimumSize">
+                 <size>
+                  <width>50</width>
+                  <height>20</height>
+                 </size>
+                </property>
+                <property name="maximumSize">
+                 <size>
+                  <width>100</width>
+                  <height>20</height>
+                 </size>
+                </property>
+                <property name="text">
+                 <string>倒序</string>
+                </property>
+               </widget>
+              </item>
+              <item row="9" column="1">
+               <widget class="QLabel" name="cellAreaLabel">
+                <property name="text">
+                 <string>小区总长宽: --</string>
+                </property>
+               </widget>
+              </item>
+              <item row="10" column="1">
+               <widget class="QLabel" name="x1ValueLabel">
+                <property name="text">
+                 <string>X1值: --</string>
+                </property>
+               </widget>
+              </item>
+              <item row="11" column="1">
+               <widget class="QLabel" name="x2ValueLabel">
+                <property name="text">
+                 <string>X2值: --</string>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </widget>
+           </item>
+          </layout>
+         </widget>
+        </item>
+        <item>
+         <widget class="QGroupBox" name="operationControlGroupBox">
+          <property name="title">
+           <string>播种计划表</string>
+          </property>
+          <layout class="QVBoxLayout" name="operationControlLayout">
+           <item>
+            <widget class="QTableWidget" name="seedingPlanTableWidget">
+             <property name="minimumSize">
+              <size>
+               <width>0</width>
+               <height>200</height>
+              </size>
+             </property>
+             <property name="rowCount">
+              <number>0</number>
+             </property>
+             <property name="columnCount">
+              <number>11</number>
+             </property>
+             <attribute name="verticalHeaderVisible">
+              <bool>false</bool>
+             </attribute>
+             <column>
+              <property name="text">
+               <string>序号</string>
+              </property>
+             </column>
+             <column>
+              <property name="text">
+               <string>方号</string>
+              </property>
+             </column>
+             <column>
+              <property name="text">
+               <string>前
+分割线(m)</string>
+              </property>
+             </column>
+             <column>
+              <property name="text">
+               <string>后
+分割线(m)</string>
+              </property>
+             </column>
+             <column>
+              <property name="text">
+               <string>正向
+落种点(m)</string>
+              </property>
+             </column>
+             <column>
+              <property name="text">
+               <string>反向
+落种点(m)</string>
+              </property>
+             </column>
+             <column>
+              <property name="text">
+               <string>正向
+触发线(m)</string>
+              </property>
+             </column>
+             <column>
+              <property name="text">
+               <string>反向
+触发线(m)</string>
+              </property>
+             </column>
+             <column>
+              <property name="text">
+               <string>正向
+触发参数</string>
+              </property>
+             </column>
+             <column>
+              <property name="text">
+               <string>反向
+触发参数</string>
+              </property>
+             </column>
+             <column>
+              <property name="text">
+               <string>株距参数</string>
+              </property>
+             </column>
+            </widget>
+           </item>
+          </layout>
+         </widget>
         </item>
        </layout>
       </widget>
@@ -1248,7 +1475,7 @@
          <item row="1" column="1">
           <widget class="QLabel" name="speedLabel">
            <property name="text">
-            <string>速度: 0.00 m/s</string>
+            <string>速度: 0.00 m/s, 北向: 0.00 m/s, 东向: 0.00 m/s</string>
            </property>
           </widget>
          </item>

@@ -69,6 +69,7 @@ MapWidget::MapWidget(QWidget *parent)
     , m_displayRotationRadians(0.0)
     , m_rotationAnimation(new QVariantAnimation(this))
     , m_currentPose()
+    , m_trajectoryVisible(false)
     , m_lastPoseTimestamp(-1.0)
     , m_lastTriggerSequence(0)
     , m_isDragging(false)
@@ -205,6 +206,16 @@ void MapWidget::updateVehiclePose(const EstimatedPose& pose)
             m_updatePending = false;
         });
     }
+}
+
+void MapWidget::setTrajectoryVisible(bool visible)
+{
+    if (m_trajectoryVisible == visible) {
+        return;
+    }
+
+    m_trajectoryVisible = visible;
+    update();
 }
 
 /**
@@ -533,9 +544,11 @@ void MapWidget::drawTriggerLines(QPainter &painter)
         const QPointF screenStart = worldToScreen(worldStart.x(), worldStart.y());
         const QPointF screenEnd = worldToScreen(worldEnd.x(), worldEnd.y());
         const bool isCurrent = m_currentPose.hasNextTrigger && m_currentPose.nextTriggerIndex == line.lineIndex;
+        const QColor baseColor = line.direction > 0 ? QColor(255, 140, 0) : QColor(0, 153, 255);
+        const QColor lineColor(baseColor.red(), baseColor.green(), baseColor.blue(), isCurrent ? 220 : 135);
 
-        painter.setPen(QPen(isCurrent ? QColor(255, 140, 0, 220) : QColor(255, 140, 0, 130),
-                            isCurrent ? 2.2 : 1.2,
+        painter.setPen(QPen(lineColor,
+                            isCurrent ? 2.4 : 1.3,
                             Qt::DashLine,
                             Qt::RoundCap));
         painter.drawLine(screenStart, screenEnd);
@@ -543,7 +556,10 @@ void MapWidget::drawTriggerLines(QPainter &painter)
         const QPointF labelAnchor((screenStart.x() + screenEnd.x()) * 0.5, (screenStart.y() + screenEnd.y()) * 0.5);
         drawLabelBubble(painter,
                         labelAnchor,
-                        QString("T%1  Y=%2").arg(line.lineIndex).arg(line.y, 0, 'f', 4),
+                        QString("T%1  %2  Y=%3")
+                            .arg(line.lineIndex)
+                            .arg(line.direction > 0 ? QStringLiteral("正") : QStringLiteral("反"))
+                            .arg(line.y, 0, 'f', 4),
                         QPointF(8.0, isCurrent ? -10.0 : -6.0));
     }
 
@@ -694,7 +710,7 @@ void MapWidget::drawSelectedBoundary(QPainter &painter)
  */
 void MapWidget::drawTrajectory(QPainter &painter)
 {
-    if (m_trajectoryPoints.isEmpty()) {
+    if (!m_trajectoryVisible || m_trajectoryPoints.isEmpty()) {
         return;
     }
 

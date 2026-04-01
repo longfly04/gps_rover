@@ -4,10 +4,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Build / Run
 
-This repo contains **two build definitions**:
-
-- **CMake (Qt6)**: `CMakeLists.txt` (currently lists a smaller set of sources)
-- **qmake**: `GPSSeeder.pro` (lists additional sources such as `src/ui/coordinatewidget.*`, `src/map/fieldmanager.*`, etc.)
+This repo contains both a CMake build and a qmake project, but **CMake is the maintained build definition**.
+`GPSSeeder.pro` is stale and references paths/files that no longer match the current tree (for example `src/ui/mapwidget.*`, `src/core/estimator/statestimator.*`, `coordinatewidget.*`, `fieldmanager.*`, and `predictivecontroller.*`). Treat `CMakeLists.txt` as the source of truth unless the user explicitly asks to restore qmake support.
 
 ### CMake build (Qt6)
 
@@ -18,106 +16,104 @@ cmake -S . -B build
 cmake --build build
 ```
 
-Run the built app (path depends on generator/config):
+Run the app:
 
 ```sh
 ./build/GPSSeeder
 ```
 
-Notes:
-- The CMake target is `GPSSeeder` (see `CMakeLists.txt`).
-- Qt6 modules are required (Core/Gui/Widgets/Network/SerialPort/SerialBus/Quick/QuickWidgets/Positioning/Location/Sql).
-
-### qmake build (Qt)
-
-If using the qmake project:
+Optional Windows Qt deployment for packaging:
 
 ```sh
-qmake GPSSeeder.pro -o Makefile
-make
+cmake -S . -B build -DGPSSEEDER_WINDEPLOYQT=ON
+cmake --build build
 ```
 
-On Windows with MinGW this is often:
-
-```sh
-mingw32-make
-```
-
-### Packaging (Windows)
-
-`CMakeLists.txt` configures CPack with **NSIS**. After a successful CMake build:
+Package with CPack/NSIS after a successful build:
 
 ```sh
 cpack --config build/CPackConfig.cmake
 ```
 
-## Tests / Lint
+Notes:
+- The CMake target is `GPSSeeder`.
+- Required Qt6 modules are Core, Gui, Widgets, Network, SerialPort, SerialBus, Quick, QuickWidgets, Positioning, Location, and Sql.
+- `GPSSeeder.iss` is also present for Inno Setup packaging and expects the deployed executable/DLL/plugin layout inside `build/`.
 
-- No repo-level test targets were found (no `tests/` directory and no `ctest` configuration in the top-level `CMakeLists.txt`).
-- No repo-level lint/format configuration was found (only some vendored third-party `.clang-format` files under `src/ThirdParty/`).
+### UI regeneration
+
+`src/ui/ui_mainwindow.h` is generated from `src/ui/mainwindow.ui`. Make structural UI changes in the `.ui` file, not the generated header.
+
+If you need to regenerate it manually:
+
+```sh
+uic src/ui/mainwindow.ui -o src/ui/ui_mainwindow.h
+```
+
+## Tests / Validation
+
+- No repo-level automated tests were found: no `tests/` directory, no `ctest` setup, and no single-test command.
+- No repo-level lint/format configuration was found outside vendored third-party files.
+- Manual validation helpers exist under `scripts/`:
+
+```sh
+python scripts/nmea_generator.py --help
+python scripts/modbus_light_simulator.py --help
+python scripts/modbus_motor_simulator.py --help
+```
+
+These scripts are useful for GPS/PLC simulation and are separate from the Qt build.
 
 ## High-level Architecture
 
-GPSSeeder is a **Qt Widgets** application that reads **GNSS (NMEA)** and **IMU (binary frames)** data from serial ports, performs lightweight estimation, visualizes position/heading and generated coverage paths, and can persist data via SQLite.
+GPSSeeder is a Qt Widgets desktop app for GNSS/IMU monitoring, local-frame field planning, trigger-line prediction, and PLC/Modbus-driven seeding workflows. `MainWindow` is the orchestration layer; sensor workers run on dedicated threads; planning and estimation operate in an OA local coordinate frame derived from user-selected O and A reference points.
 
-### Major layers
+### Major runtime pieces
 
-1. **UI / orchestration** (`src/ui/`)
-   - `MainWindow` is the main controller: creates sensors, connects signals/slots, and refreshes UI on timers.
-   - UI form: `src/ui/mainwindow.ui`.
+1. **Application shell / orchestration**
+   - `src/main.cpp` starts the app and logging.
+   - `src/ui/mainwindow.{h,cpp,ui}` owns the sensors, timers, coordinate system, block planner, state estimator, Modbus client, and most workflow/UI logic.
 
-2. **Sensor acquisition (serial)** (`src/core/sensor/` + `src/core/fileio/`)
-   - `SensorBase`, `ImuSensor`, `GpsSensor`: threading + lifecycle; emit new data to UI.
-   - `ImuSerialLoader`: reads from serial and parses IMU binary frames.
-   - `GnssSerialLoader`: reads from serial and parses NMEA sentences into `GNSS`.
-   - Low-level serial wrapper: `src/core/fileio/serialport.*`.
+2. **Sensor IO and threading**
+   - `src/core/sensor/sensorinterface.*` defines `ImuSensor` and `GpsSensor`.
+   - Each sensor object moves itself to a dedicated `QThread` and runs a blocking read loop there.
+   - Watchdog/reconnect behavior is handled inside the collection loops rather than by Qt event-loop timers.
 
-3. **Data model / shared types** (`src/core/common/`)
-   - `src/core/common/types.h` defines the shared `IMU` and `GNSS` structs (Eigen vectors + timestamps).
-   - Logging singleton: `src/core/common/logger.*`.
-   - Time sync helper: `src/core/common/time_sync.*`.
+3. **Protocol parsing**
+   - `src/core/fileio/imuserialloader.cpp` parses 0x55-framed IMU packets (0x51-0x54 accel/gyro/angle/mag).
+   - `src/core/fileio/gnssserialloader.cpp` parses NMEA sentences and keeps reading past the first position fix to pick up nearby speed data.
 
-4. **Estimation / map-side state** (`src/map/`)
-   - `src/map/statestimator.*`: maintains a sliding window of points and estimates velocity; also includes line-crossing detection used for seeding logic.
-   - `src/map/coordinate.*`: coordinate helpers used by map/path components.
+4. **Coordinate system and field planning**
+   - `src/map/coordinate.*` converts between WGS84, ENU, and the OA local XY frame.
+   - OA convention is important throughout the app: +Y is along O→A, and +X is +Y rotated clockwise 90°.
+   - `src/map/blockgenerator.*` generates blocks, headlands, control points, trigger lines, and seeding grids from the UI parameters.
 
-5. **Path / field generation & visualization** (`src/map/`)
-   - `src/map/pathgenerator.*`: generates “bow/shuttle”-style coverage paths and provides seeding/headland segmentation.
-   - Map display is implemented as a custom widget (see `src/map/mapwidget.*` in the CMake build).
-   - Table/field UI interaction (CMake build): `src/map/tablewidget.*`.
+5. **State estimation and trigger prediction**
+   - `src/map/statestimator.*` maintains a sliding local-position window, estimates velocity by regression, infers travel direction, predicts trigger-line crossings, and supports deferred precise trigger commits.
+   - `MainWindow` uses a single-shot `Qt::PreciseTimer` to commit predicted triggers at the scheduled time.
 
-6. **Persistence (SQLite)** (`src/database/`)
-   - `src/database/dbmanager.*`: creates and writes to SQLite tables (paths, path points, seeding details) via QtSql.
+6. **Visualization**
+   - `src/map/mapwidget.*` draws the vehicle pose, trajectory, trigger history, and block overlays.
+   - `src/map/osmtilelayer.*` supplies the basemap with persistent local tile caching.
+   - The current code uses **Esri World Imagery** tiles, even though the README still mentions Gaode/AMap.
 
-### Data flow (runtime)
+7. **Table, persistence, and PLC integration**
+   - `src/map/tablewidget.*` renders a compact forward/reverse trigger history table.
+   - `src/database/dbmanager.*` stores paths, path points, and seeding details in SQLite.
+   - PLC communication is implemented directly in `MainWindow` using `QModbusTcpClient`.
 
-- Serial data is read and parsed by loaders:
-  - GNSS: `GnssSerialLoader` parses NMEA messages into a `GNSS` struct.
-  - IMU: `ImuSerialLoader` parses 0x55-framed packets (types like 0x51–0x54) into an `IMU` struct.
-- `ImuSensor` / `GpsSensor` run in their own `QThread` and emit Qt signals carrying the parsed structs.
-- `MainWindow` receives these signals (queued to the UI thread) and updates UI elements and map state on timers.
+### Runtime data flow
 
-Key entrypoints:
-- App startup: `src/main.cpp` creates `MainWindow` and initializes logging.
-- UI wiring: `src/ui/mainwindow.{h,cpp}`.
-- Sensor threading + emission: `src/core/sensor/sensorinterface.{h,cpp}`.
+1. The user configures IMU/GPS serial ports and PLC settings in the UI.
+2. `MainWindow` starts `ImuSensor` and `GpsSensor`; each worker reads and parses data on its own thread.
+3. Sensor signals are queued back to the UI thread. `MainWindow::initSignalsSlots()` deliberately coalesces high-rate IMU/GNSS updates into “latest sample only” UI refreshes so the event queue does not grow without bound.
+4. GPS time sync averages the offset from the first 10 valid fixes, then propagates that offset so IMU timestamps can be aligned to GPS time.
+5. After O/A and field parameters are configured, `BlockGenerator` produces the trigger plan and `StateEstimator` consumes sensor-derived `SensorData` to predict upcoming crossings.
+6. `MapWidget` and `TableWidget` present the live pose, field layout, pending trigger, and committed trigger history.
 
-### Threading model (Qt)
+## Repo-specific gotchas
 
-- Each sensor object (`ImuSensor`, `GpsSensor`) is moved to a dedicated `QThread` (see `SensorBase::startThread()` in `src/core/sensor/sensorinterface.cpp`).
-- UI receives sensor updates via signals/slots (typically `Qt::QueuedConnection`) to avoid cross-thread UI access.
-
-### Time synchronization
-
-- GNSS data provides a reference time.
-- The GPS sensor computes a `dt` offset between local/system time and GNSS time using multiple valid samples, then emits a time-sync completion signal.
-- IMU can apply the `dt` to align IMU timestamps to GNSS time (fields in `IMU` include `synced`/`dt`/`gpstime`).
-
-## Notable repo details
-
-- README mentions Gaode (AMap) usage; treat any API keys/config as **external configuration** and avoid hard-coding new secrets into the repo.
-- There is a `scripts/nmea_generator.py` utility used to generate/simulate NMEA output over serial for testing.
-
-## When editing
-
-- If you add/remove source files, confirm whether the project is meant to be built via **CMake**, **qmake**, or both, since `CMakeLists.txt` and `GPSSeeder.pro` currently list different sets of sources.
+- If you add or remove C++ sources, update `CMakeLists.txt`; only update `GPSSeeder.pro` if the user explicitly wants qmake support brought back into sync.
+- `src/ui/ui_mainwindow.h` is generated and will be overwritten.
+- `src/main.cpp` currently uses an absolute Windows icon path (`d:/GPS-Seeder/gps_rover/resource/icon.jpg`), which is brittle outside that machine.
+- `default.json` contains sample serial defaults, but the normal runtime flow is UI-driven.

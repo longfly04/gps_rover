@@ -30,6 +30,7 @@ struct EstimatedPose {
     bool hasNextTrigger = false; ///< 是否存在下一条待触发线
     int nextTriggerIndex = 0;    ///< 下一条待触发线编号（从1开始）
     double nextTriggerLineY = 0.0; ///< 下一条待触发线Y坐标（米）
+    bool isInFineMode = false;   ///< 是否已进入精估计阶段
     double nextTriggerCountdownSec = -1.0; ///< 下一次触发倒计时（秒）
     double predictedTriggerX = 0.0; ///< 预测触发点X坐标（米）
     double predictedTriggerY = 0.0; ///< 预测触发点Y坐标（米）
@@ -39,6 +40,9 @@ struct EstimatedPose {
     double lastTriggerX = 0.0;   ///< 最近一次触发点X坐标（米）
     double lastTriggerY = 0.0;   ///< 最近一次触发点Y坐标（米）
     qint64 lastTriggerTimeUs = 0; ///< 最近一次触发时间戳（微秒）
+    int lastTriggerLineIndex = 0; ///< 最近一次触发对应的触发线编号（从1开始）
+    int lastTriggerDirection = 0; ///< 最近一次触发对应的方向（+1=正向，-1=反向）
+    double lastTriggerLineY = 0.0; ///< 最近一次触发对应的触发线Y坐标（米）
     int triggerSequence = 0;     ///< 已提交触发事件序号
 };
 
@@ -92,6 +96,7 @@ public:
     void setUseKalman(bool useKalman);
     void setLowPassAlpha(double alpha);
     void setTriggerPlan(const BlockPlanResult& plan);
+    bool updatePendingTriggerPlan(const BlockPlanResult& plan);
 
     void update(const SensorData& data);
     EstimatedPose getPose() const;
@@ -160,6 +165,9 @@ private:
     double m_lastTriggerX; ///< 最近一次触发点X坐标
     double m_lastTriggerY; ///< 最近一次触发点Y坐标
     qint64 m_lastTriggerTimeUs; ///< 最近一次触发时间戳
+    int m_lastTriggerLineIndex; ///< 最近一次触发对应的触发线编号
+    int m_lastTriggerDirection; ///< 最近一次触发对应的方向
+    double m_lastTriggerLineY; ///< 最近一次触发对应的触发线Y坐标
     int m_triggerSequence; ///< 已触发序号
 
     double m_deadzoneM; ///< 越线后的死区（米）

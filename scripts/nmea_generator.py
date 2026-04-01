@@ -1154,15 +1154,15 @@ def main():
 
     # 运动参数
     parser.add_argument('--heading', type=float, default=60,
-                        help='初始方向角 (度, 默认: 60 )')
+                        help='初始方向角 (度, 默认: 45)')
     parser.add_argument('--speed', type=float, default=1.0,
                         help='初始速度 (米/秒, 默认: 1.0)')
     parser.add_argument('--route', dest='route_type', type=str, default='roundtrip',
                         choices=['linear', 'roundtrip', 'circle'],
                         help='路线类型: linear=直线, roundtrip=往返, circle=圆形 (默认: roundtrip)')
                         
-    parser.add_argument('--roundtrip-distance', type=float, default=100.0,
-                        help='往返运动往返距离N (米, 默认: 100)')
+    parser.add_argument('--roundtrip-distance', type=float, default=240.0,
+                        help='往返运动往返距离N (米, 默认: 400.0)')
     parser.add_argument('--roundtrip-gap', type=float, default=2.4,
                         help='往返运动间隔m (米, 默认: 2.4)')
     parser.add_argument('--roundtrip-turn-speed', type=float, default=0.5,
@@ -1184,7 +1184,7 @@ def main():
     # 报文参数
     parser.add_argument('--rate', type=int, default=20,
                         help='报文更新率 (Hz, 默认: 20)')
-    parser.add_argument('--noise', type=float, default=0.3,
+    parser.add_argument('--noise', type=float, default=0.0,
                         help='扰动率 (0-1, 默认: 0.2)')
 
     # 报文类型

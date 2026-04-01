@@ -17,6 +17,7 @@ BlockGenerator::BlockGenerator()
       m_areaWidth(100.0),
       m_triggerDistance(1.0),
       m_stopTriggerDistance(0.5),
+      m_triggerAdvanceOffset(1.0),
       m_gridStep(0.1),
       m_gridMinY(0.0),
       m_gridMaxY(0.0)
@@ -28,6 +29,7 @@ BlockGenerator::BlockGenerator()
     m_result.triggerStartY = 0.0;
     m_result.triggerStopY = 0.0;
     m_result.triggerInterval = 0.0;
+    m_result.triggerAdvanceOffset = m_triggerAdvanceOffset;
     m_result.isValid = false;
 }
 
@@ -91,7 +93,9 @@ void BlockGenerator::setAreaRange(double areaLength, double areaWidth)
  */
 void BlockGenerator::setTriggerDistance(double distance)
 {
-    m_triggerDistance = std::max(0.1, distance);
+    if (std::isfinite(distance)) {
+        m_triggerDistance = distance;
+    }
 }
 
 /**
@@ -100,7 +104,20 @@ void BlockGenerator::setTriggerDistance(double distance)
  */
 void BlockGenerator::setStopTriggerDistance(double distance)
 {
-    m_stopTriggerDistance = std::max(0.1, distance);
+    if (std::isfinite(distance)) {
+        m_stopTriggerDistance = distance;
+    }
+}
+
+/**
+ * @brief 设置触发线提前量
+ * @param distance 提前量（米）
+ */
+void BlockGenerator::setTriggerAdvanceOffset(double distance)
+{
+    if (std::isfinite(distance)) {
+        m_triggerAdvanceOffset = std::max(0.0, distance);
+    }
 }
 
 /**
@@ -287,52 +304,98 @@ void BlockGenerator::generateTriggerLines()
 {
     m_result.triggerLines.clear();
 
-    const double interval = m_fieldLength + m_headlandWidth;
-    const double clampedStartInputY = std::clamp(m_triggerDistance, 0.0, m_areaLength);
-    const double clampedStopInputY = std::clamp(m_stopTriggerDistance, 0.0, m_areaLength);
-    const double startY = std::min(clampedStartInputY, clampedStopInputY);
-    const double stopY = std::max(clampedStartInputY, clampedStopInputY);
+    const double period = m_fieldLength + m_headlandWidth;
+    m_result.triggerInterval = period;
+    m_result.triggerAdvanceOffset = m_triggerAdvanceOffset;
 
-    m_result.triggerStartY = startY;
-    m_result.triggerStopY = stopY;
-    m_result.triggerInterval = interval;
-
-    if (interval <= 0.0 || startY > stopY + 1e-9) {
-        LOG_WARN("Trigger line generation skipped: startY=%.4f, stopY=%.4f, interval=%.4f",
-                 startY, stopY, interval);
+    if (!std::isfinite(period) || period <= 1e-9) {
+        m_result.triggerStartY = 0.0;
+        m_result.triggerStopY = 0.0;
+        LOG_WARN("Trigger line generation skipped: invalid period=%.4f", period);
         return;
     }
 
-    if (clampedStartInputY != m_triggerDistance || clampedStopInputY != m_stopTriggerDistance) {
-        LOG_WARN("Trigger range clamped to area bounds: inputStartY=%.4f, inputStopY=%.4f, areaLength=%.4f, usedStartY=%.4f, usedStopY=%.4f",
+    const double lineSpanX = std::max(0.0, m_areaWidth);
+
+    const bool hasForwardTemplate = std::isfinite(m_triggerDistance)
+        && m_triggerDistance >= -1e-9
+        && m_triggerDistance <= m_fieldLength + 1e-9;
+    const bool hasReverseTemplate = std::isfinite(m_stopTriggerDistance)
+        && m_stopTriggerDistance >= -1e-9
+        && m_stopTriggerDistance <= m_fieldLength + 1e-9;
+
+    if (!hasForwardTemplate) {
+        LOG_WARN("Forward trigger template skipped: triggerDistance=%.4f, fieldLength=%.4f",
                  m_triggerDistance,
+                 m_fieldLength);
+    }
+    if (!hasReverseTemplate) {
+        LOG_WARN("Reverse trigger template skipped: stopTriggerDistance=%.4f, fieldLength=%.4f",
                  m_stopTriggerDistance,
-                 m_areaLength,
-                 startY,
-                 stopY);
-    } else if (m_triggerDistance > m_stopTriggerDistance) {
-        LOG_WARN("Trigger range reordered by position: startInput=%.4f, stopInput=%.4f, usedStartY=%.4f, usedStopY=%.4f",
-                 m_triggerDistance,
-                 m_stopTriggerDistance,
-                 startY,
-                 stopY);
+                 m_fieldLength);
     }
 
-    int lineIndex = 1;
-    for (double y = startY; y <= stopY + 1e-9; y += interval) {
-        TriggerLineSpec line;
-        line.lineIndex = lineIndex++;
-        line.y = y;
+    auto appendLine = [this, lineSpanX](int cycleIndex, int direction, double triggerY, double boundaryY) {
+        if (!std::isfinite(triggerY) || triggerY < -1e-9 || triggerY > m_areaLength + 1e-9) {
+            return;
+        }
+
+        TriggerLineSpec line{};
+        line.lineIndex = 0;
+        line.blockId = cycleIndex + 1;
+        line.direction = direction;
+        line.y = std::clamp(triggerY, 0.0, m_areaLength);
+        line.boundaryY = std::clamp(boundaryY, 0.0, m_areaLength);
         line.xStart = 0.0;
-        line.xEnd = m_areaWidth;
+        line.xEnd = lineSpanX;
         m_result.triggerLines.push_back(line);
+    };
+
+    for (int cycleIndex = 0;; ++cycleIndex) {
+        const double baseY = static_cast<double>(cycleIndex) * period;
+        if (baseY > m_areaLength + 1e-9) {
+            break;
+        }
+
+        if (hasForwardTemplate) {
+            appendLine(cycleIndex, +1, baseY + m_triggerDistance, baseY);
+        }
+        if (hasReverseTemplate) {
+            appendLine(cycleIndex, -1, baseY + m_fieldLength - m_stopTriggerDistance, baseY + m_fieldLength);
+        }
     }
 
-    LOG_INFO("Generated %d trigger lines: startY=%.4f, stopY=%.4f, interval=%.4f",
+    std::sort(m_result.triggerLines.begin(), m_result.triggerLines.end(), [](const TriggerLineSpec& lhs, const TriggerLineSpec& rhs) {
+        if (std::abs(lhs.y - rhs.y) > 1e-9) {
+            return lhs.y < rhs.y;
+        }
+        return lhs.direction > rhs.direction;
+    });
+
+    for (size_t i = 0; i < m_result.triggerLines.size(); ++i) {
+        m_result.triggerLines[i].lineIndex = static_cast<int>(i) + 1;
+    }
+
+    const auto firstForwardIt = std::find_if(m_result.triggerLines.begin(),
+                                             m_result.triggerLines.end(),
+                                             [](const TriggerLineSpec& line) {
+                                                 return line.direction > 0;
+                                             });
+    if (firstForwardIt != m_result.triggerLines.end()) {
+        m_result.triggerStartY = firstForwardIt->y;
+    } else if (!m_result.triggerLines.empty()) {
+        m_result.triggerStartY = m_result.triggerLines.front().y;
+    } else {
+        m_result.triggerStartY = 0.0;
+    }
+    m_result.triggerStopY = m_result.triggerLines.empty() ? 0.0 : m_result.triggerLines.back().y;
+
+    LOG_INFO("Generated %d periodic trigger lines: startY=%.4f, stopY=%.4f, interval=%.4f, legacyAdvanceOffset=%.4f",
              static_cast<int>(m_result.triggerLines.size()),
              m_result.triggerStartY,
              m_result.triggerStopY,
-             m_result.triggerInterval);
+             m_result.triggerInterval,
+             m_result.triggerAdvanceOffset);
 }
 
 /**
