@@ -21,7 +21,7 @@ endif()
 find_package(Qt6 REQUIRED COMPONENTS Core Gui Widgets Network SerialPort SerialBus Quick QuickWidgets Positioning Location)
 
 # 部署开关：构建后自动把 Qt 依赖 DLL/插件输出到 build 目录（供 GPSSeeder.iss 打包）
-option(GPSSEEDER_WINDEPLOYQT "Run windeployqt after build" ON)
+option(GPSSEEDER_WINDEPLOYQT "Run windeployqt after build" OFF)
 
 qt_add_executable(GPSSeeder
     src/main.cpp

@@ -1,11 +1,28 @@
-# Qt build directories
+# Build outputs
+/build/
+/release/
+/Output/
+/cache/
+/.cache/
+/.qtc_clangd/
+/.qtcreator/
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+compile_commands.json
+CPackConfig.cmake
+CPackSourceConfig.cmake
 Makefile
 Makefile.*
+
+# Generated files
+src/ui/ui_mainwindow.h
 *.pro.user
 *.pro.user.*
 *.qmake.stash
+*.autosave
 
-# MinGW compilation files
+# Binaries and debug symbols
 *.o
 *.obj
 *.a
@@ -14,79 +31,60 @@ Makefile.*
 *.exe
 *.exe.debug
 *.pdb
-
-# Windows system files
-Thumbs.db
-Thumbs.db:encryptable
-ehthumbs.db
-ehthumbs_vista.db
 *.stackdump
-[Dd]esktop.ini
-$RECYCLE.BIN/
-*.cab
-*.msi
-*.msix
-*.msm
-*.msp
 
-# IDE and editor files
+# Logs and local databases
+*.log
+logs/
+gps_rover.log
+*.db
+*.sqlite
+*.sqlite3
+
+# Python cache
+__pycache__/
+*.pyc
+
+# IDE and editor
 .vscode/
 .idea/
 *.swp
 *.swo
 *~
+*.user
 
-# Log files
-*.log
-logs/
-
-# Dependencies
-node_modules/
-vendor/
-
-# Environment files
-.env
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
-
-# Backup files
-*.bak
-*.backup
-
-# OS generated files
+# OS files
 .DS_Store
 .DS_Store?
 ._*
 .Spotlight-V100
 .Trashes
-ehthumbs.db
 Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+[Dd]esktop.ini
+$RECYCLE.BIN/
 
-# Project specific
-*.user
-*.autosave
+# Environment and local config
+.env
+.env.*
+default.local.json
 
-# Database files
-*.db
-*.sqlite
-*.sqlite3
-
-# Temporary files
+# Local resources and temp files
+resource/
 tmp/
 temp/
 
-# Documentation build
-build/
-.cache/
-cache/
-.qtc_clangd/
-.qtcreator/
-.trae/
-release/
-others/
-GPSSeeder.pro
-resource/
-CLAUDE.md
-.claude/*
+# Internal docs, backups and non-essential materials
+/docs/
+/others/
+/src/ui_bak/
+/src/ui_bak.zip
+/src/ui_v2/
+/src/map/*.md
+/GPSSeeder.pro
+/CLAUDE.md
+/.claude/
+/src/ThirdParty/abseil-cpp-20220623.1/
+/src/ThirdParty/freemodbus/
