@@ -1490,7 +1490,7 @@ public:
         generateSeedingPlanButton->setText(QCoreApplication::translate("MainWindow", "\347\224\237\346\210\220\346\222\255\347\247\215\350\256\241\345\210\222", nullptr));
         antennaCalibrationButton->setText(QCoreApplication::translate("MainWindow", "\345\244\251\347\272\277\346\240\241\345\207\206", nullptr));
         lockSeedingPlanButton->setText(QCoreApplication::translate("MainWindow", "\351\224\201\345\256\232\346\222\255\347\247\215\350\256\241\345\210\222", nullptr));
-        configFileLabel->setText(QCoreApplication::translate("MainWindow", "\351\205\215\346\222\255\347\247\215\350\256\241\345\210\222\347\256\241\347\220\206", nullptr));
+        configFileLabel->setText(QCoreApplication::translate("MainWindow", "\346\222\255\347\247\215\350\256\241\345\210\222\347\256\241\347\220\206", nullptr));
         saveConfigFileButton->setText(QCoreApplication::translate("MainWindow", "\344\277\235\345\255\230\350\256\241\345\210\222", nullptr));
         loadConfigFileButton->setText(QCoreApplication::translate("MainWindow", "\345\212\240\350\275\275\350\256\241\345\210\222", nullptr));
         jobInfoGroupBox->setTitle(QCoreApplication::translate("MainWindow", "\345\260\217\345\214\272\351\205\215\347\275\256\350\241\250", nullptr));
